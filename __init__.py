@@ -4,8 +4,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Vertias Ai environment server components."""
+"""Vertias Ai Environment."""
 
-from .Vertias_AI_environment import VertiasAiEnvironment
+from .client import VertiasAiEnv
+from .models import VertiasAiAction, VertiasAiObservation
 
-__all__ = ["VertiasAiEnvironment"]
+__all__ = [
+    "VertiasAiAction",
+    "VertiasAiObservation",
+    "VertiasAiEnv",
+]
