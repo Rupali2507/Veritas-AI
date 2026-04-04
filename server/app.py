@@ -32,7 +32,7 @@ from server.Vertias_AI_environment import VeritasEnvironment
 # Create the FastAPI app using OpenEnv's factory
 # This automatically creates /reset, /step, /state, /ws, /web, /health
 app = create_app(
-    VeritasEnvironment,
+    lambda: VeritasEnvironment(),
     VeritasAction,
     VeritasObservation,
     env_name="Veritas-AI",
