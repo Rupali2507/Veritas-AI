@@ -2,3 +2,4 @@ openenv-core
 fastapi 
 uvicorn 
 pydantic
+uv

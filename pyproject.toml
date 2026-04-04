@@ -9,23 +9,16 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "openenv-Vertias_AI"
-version = "0.1.0"
-description = "Vertias Ai environment for OpenEnv"
+name = "veritas-ai"
+version = "1.0.0"
+description = "Veritas AI — Financial Crime Investigation Environment for OpenEnv"
 requires-python = ">=3.10"
 dependencies = [
-    # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
-    # install from github
-    # "openenv-core[core] @ git+https://github.com/meta-pytorch/OpenEnv.git",
     "openenv-core[core]>=0.2.2",
-    # Environment-specific dependencies
-    # Add all dependencies needed for your environment here
-    # Examples:
-    # "numpy>=1.19.0",
-    # "torch>=2.0.0",
-    # "gymnasium>=0.29.0",
-    # "openspiel>=1.0.0",
-    # "smolagents>=1.22.0,<2",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "openai>=1.50.0",
 ]
 
 [project.optional-dependencies]
@@ -35,11 +28,13 @@ dev = [
 ]
 
 [project.scripts]
-# Server entry point - enables running via: uv run --project . server
-# or: python -m Vertias_AI.server.app
-server = "Vertias_AI.server.app:main"
+server = "server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["Vertias_AI", "Vertias_AI.server"]
-package-dir = { "Vertias_AI" = ".", "Vertias_AI.server" = "server" }
+packages = ["veritas_env", "server"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+]
