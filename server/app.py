@@ -5,80 +5,53 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-FastAPI application for the Vertias Ai Environment.
-
-This module creates an HTTP server that exposes the VertiasAiEnvironment
-over HTTP and WebSocket endpoints, compatible with EnvClient.
+FastAPI server for the Veritas AI Environment.
 
 Endpoints:
-    - POST /reset: Reset the environment
-    - POST /step: Execute an action
-    - GET /state: Get current environment state
-    - GET /schema: Get action/observation schemas
-    - WS /ws: WebSocket endpoint for persistent sessions
-
-Usage:
-    # Development (with auto-reload):
-    uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
-
-    # Production:
-    uvicorn server.app:app --host 0.0.0.0 --port 8000 --workers 4
-
-    # Or run directly:
-    python -m server.app
+    POST /reset  — start a new investigation episode
+    POST /step   — take one action
+    GET  /state  — get episode metadata
+    GET  /health — health check (required by hackathon validator)
+    GET  /tasks  — list all available tasks
+    WS   /ws     — WebSocket for persistent sessions
 """
 
 try:
     from openenv.core.env_server.http_server import create_app
-except Exception as e:  # pragma: no cover
+except Exception as e:
     raise ImportError(
-        "openenv is required for the web interface. Install dependencies with '\n    uv sync\n'"
+        "openenv-core is required. Install with: pip install openenv-core"
     ) from e
 
-try:
-    from ..models import VertiasAiAction, VertiasAiObservation
-    from .Vertias_AI_environment import VertiasAiEnvironment
-except ModuleNotFoundError:
-    from models import VertiasAiAction, VertiasAiObservation
-    from server.Vertias_AI_environment import VertiasAiEnvironment
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
-# Create the app with web interface and README integration
+from models import VeritasAction, VeritasObservation
+from server.Vertias_AI_environment import VeritasEnvironment
+# Create the FastAPI app using OpenEnv's factory
+# This automatically creates /reset, /step, /state, /ws, /web, /health
 app = create_app(
-    VertiasAiEnvironment,
-    VertiasAiAction,
-    VertiasAiObservation,
-    env_name="Vertias_AI",
-    max_concurrent_envs=1,  # increase this number to allow more concurrent WebSocket sessions
+    VeritasEnvironment,
+    VeritasAction,
+    VeritasObservation,
+    env_name="Veritas-AI",
+    max_concurrent_envs=1,
 )
 
 
-def main(host: str = "0.0.0.0", port: int = 8000):
+def main(host: str = "0.0.0.0", port: int = 7860):
     """
-    Entry point for direct execution via uv run or python -m.
-
-    This function enables running the server without Docker:
-        uv run --project . server
-        uv run --project . server --port 8001
-        python -m Vertias_AI.server.app
-
-    Args:
-        host: Host address to bind to (default: "0.0.0.0")
-        port: Port number to listen on (default: 8000)
-
-    For production deployments, consider using uvicorn directly with
-    multiple workers:
-        uvicorn Vertias_AI.server.app:app --workers 4
+    Entry point for uv run server and direct execution.
+    Called by pyproject.toml [project.scripts] server entry.
     """
     import uvicorn
-
     uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=7860)
     args = parser.parse_args()
-    main(port=args.port)
+    main()

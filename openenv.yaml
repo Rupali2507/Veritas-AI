@@ -1,7 +1,216 @@
-spec_version: 1
-name: Vertias_AI
-type: space
-runtime: fastapi
-app: server.app:app
-port: 8000
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# openenv.yaml — machine-readable spec for Veritas AI Environment
+# Validated by: openenv validate
 
+name: veritas-ai
+version: "1.0.0"
+description: >
+  Veritas AI is a financial crime investigation environment where an
+  AI agent acts as an analyst. Given a synthetic database of accounts
+  and transactions, the agent queries evidence, flags suspicious
+  accounts, and submits an investigation report. The grader scores
+  the report for accuracy, case classification, and evidence quality.
+
+tags:
+  - openenv
+  - finance
+  - investigation
+  - real-world
+  - agentic
+
+author: veritas-ai-team
+
+# ── Interface ─────────────────────────────────────────────
+interface:
+  reset:
+    method: POST
+    path: /reset
+    body:
+      task_id:
+        type: string
+        required: false
+        description: "Pin to a specific task. One of: task_easy | task_medium | task_hard"
+
+  step:
+    method: POST
+    path: /step
+    body:
+      action_type:
+        type: string
+        required: true
+        description: "One of: query_transactions | lookup_account | flag_account | submit_report"
+      account_id:
+        type: string
+        required: false
+      date_from:
+        type: string
+        required: false
+      date_to:
+        type: string
+        required: false
+      min_amount:
+        type: number
+        required: false
+      max_amount:
+        type: number
+        required: false
+      reason:
+        type: string
+        required: false
+      primary_suspect:
+        type: string
+        required: false
+      associates:
+        type: array
+        required: false
+      case_type:
+        type: string
+        required: false
+      evidence_summary:
+        type: string
+        required: false
+
+  state:
+    method: GET
+    path: /state
+
+# ── Action space ──────────────────────────────────────────
+action_space:
+  type: structured
+  actions:
+    - name: query_transactions
+      description: "Retrieve filtered transaction rows for one account"
+    - name: lookup_account
+      description: "Get full account profile including device ID and IP"
+    - name: flag_account
+      description: "Mark an account as suspicious"
+    - name: submit_report
+      description: "Final action — submit investigation conclusions"
+
+# ── Observation space ─────────────────────────────────────
+observation_space:
+  case_id:
+    type: string
+    description: "Unique ID for this investigation case"
+  task_id:
+    type: string
+    description: "Active task identifier"
+  difficulty:
+    type: string
+    enum: [easy, medium, hard]
+  task_description:
+    type: string
+  initial_alerts:
+    type: array
+    description: "System alerts that opened the case"
+  accounts_in_scope:
+    type: array
+    description: "Account IDs available for investigation"
+  action_result:
+    type: object
+    nullable: true
+    description: "Data returned by last action"
+  action_error:
+    type: string
+    nullable: true
+    description: "Error message if action was invalid"
+  flagged_accounts:
+    type: array
+    description: "Accounts flagged by the agent so far"
+  partial_score:
+    type: number
+    description: "Grader score 0.0-1.0, updated on submit_report"
+  feedback:
+    type: string
+    description: "Human-readable progress hint"
+  reward:
+    type: number
+    description: "Shaped reward for this step"
+  done:
+    type: boolean
+  steps_taken:
+    type: integer
+  max_steps:
+    type: integer
+
+# ── Tasks ─────────────────────────────────────────────────
+tasks:
+  - id: task_easy
+    difficulty: easy
+    max_steps: 8
+    case_type: card_scheme
+    description: >
+      Identify the primary account behind a high-velocity card
+      scheme. One account is making rapid high-value purchases
+      at suspicious merchants. Submit report with case_type
+      'card_scheme'.
+    scoring:
+      correct_suspect: 0.50
+      correct_case_type: 0.20
+      evidence_quality: 0.15
+      no_false_accusations: 0.15
+
+  - id: task_medium
+    difficulty: medium
+    max_steps: 12
+    case_type: layering_scheme
+    description: >
+      Trace a money movement chain where funds are transferred
+      through 3-4 accounts in amounts just below the reporting
+      threshold. Identify the origin account and all
+      intermediaries. Submit report with case_type
+      'layering_scheme'.
+    scoring:
+      correct_suspect: 0.35
+      correct_associates: 0.30
+      correct_case_type: 0.15
+      evidence_quality: 0.15
+      no_false_associates: 0.05
+
+  - id: task_hard
+    difficulty: hard
+    max_steps: 18
+    case_type: coordinated_scheme
+    description: >
+      Identify a coordinated ring of 5-8 accounts controlled
+      by a single operator, linked by shared device IDs and
+      IP address patterns. Name the ring operator and all
+      associates. Submit report with case_type
+      'coordinated_scheme'.
+    scoring:
+      correct_suspect: 0.30
+      correct_associates: 0.32
+      correct_case_type: 0.10
+      evidence_quality: 0.15
+      no_false_associates: 0.08
+      partial_ring_credit: 0.05
+
+# ── Reward function ───────────────────────────────────────
+reward:
+  step_penalty: -0.02
+  query_suspicious_account: +0.05
+  query_innocent_account: -0.02
+  flag_correct_suspect: +0.10
+  flag_correct_associate: +0.05
+  flag_innocent_account: -0.10
+  report_correct_suspect: +0.40
+  report_wrong_suspect: -0.20
+  report_correct_associate: +0.10
+  report_correct_case_type: +0.20
+  report_good_evidence: +0.15
+  solve_bonus: +0.25
+  episode_theoretical_max: ~2.0
+
+# ── Episode ───────────────────────────────────────────────
+episode:
+  termination:
+    - "submit_report action called"
+    - "steps_taken >= max_steps"
+  reset_behaviour: >
+    Fresh synthetic scenario generated on every reset().
+    Different seed each time — agent cannot memorise answers.
+  reproducibility: >
+    Scenarios are deterministic given a seed.
+    The seed is stored in state.metadata for debugging.
