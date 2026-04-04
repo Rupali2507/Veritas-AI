@@ -21,6 +21,11 @@ import random
 import uuid
 from typing import Any, Dict, List, Optional
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from openenv.core.env_server.interfaces import Environment
 from models import (
     VeritasAction,
     VeritasObservation,
@@ -34,7 +39,7 @@ from veritas_env.reward import (
 from veritas_env.tasks import TASKS, GRADERS, TASK_ORDER
 
 
-class VeritasEnvironment:
+class VeritasEnvironment(Environment):
     """
     Veritas AI Financial Crime Investigation Environment.
 
@@ -49,11 +54,12 @@ class VeritasEnvironment:
       (or max_steps reached — done=True, partial score returned)
     """
 
-    def __init__(self, task_id: Optional[str] = None):
+    def __init__(self, task_id=None):
         """
         Args:
             task_id: pin to one task, or None to cycle through all.
         """
+        super().__init__()
         self._task_id_override  = task_id
         self._episode_index     = 0   # cycles through TASK_ORDER
 
@@ -73,7 +79,7 @@ class VeritasEnvironment:
     # reset()
     # ─────────────────────────────────────────────────────
 
-    def reset(self) -> VeritasObservation:
+    def reset(self, seed=None, episode_id=None, **kwargs) -> VeritasObservation:  
         """Start a fresh episode with a new scenario."""
 
         # Pick task
@@ -131,7 +137,7 @@ class VeritasEnvironment:
     # step()
     # ─────────────────────────────────────────────────────
 
-    def step(self, action: VeritasAction) -> VeritasObservation:
+    def step(self, action: VeritasAction, timeout_s=None, **kwargs) -> VeritasObservation:
         """
         Execute one action and return updated observation.
         Never raises — all errors returned in action_error field.
@@ -437,3 +443,7 @@ class VeritasEnvironment:
             steps_taken       = self._step_count,
             max_steps         = task.max_steps,
         )
+    
+    def close(self) -> None:
+        """Clean up episode resources."""
+        self._scenario = None
