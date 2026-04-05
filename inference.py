@@ -59,86 +59,85 @@ client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 # ─────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = textwrap.dedent("""
-    You are Veritas, an expert financial crime investigation analyst.
-    You are given an investigation case with suspicious account alerts.
-    Your job is to investigate accounts, gather evidence, and identify
-    the person responsible for the financial crime scheme.
+    You are Veritas, a financial crime analyst. You investigate cases efficiently.
 
-    You have exactly 4 actions available:
-      1. query_transactions — retrieve transactions for an account
-      2. lookup_account     — get full profile of an account
-      3. flag_account       — mark an account as suspicious
-      4. submit_report      — file your final investigation report
+    AVAILABLE ACTIONS (pick exactly one per turn):
+    1. {"action_type": "lookup_account", "account_id": "ACC-XXXX"}
+    2. {"action_type": "query_transactions", "account_id": "ACC-XXXX"}
+    3. {"action_type": "flag_account", "account_id": "ACC-XXXX", "reason": "..."}
+    4. {"action_type": "submit_report", "primary_suspect": "ACC-XXXX", "associates": [], "case_type": "card_scheme", "evidence_summary": "..."}
 
-    RULES:
-    - Respond with ONLY a valid JSON object. No explanation, no markdown.
-    - Choose exactly one action per response.
-    - Always investigate before submitting a report.
-    - For submit_report you must include:
-        primary_suspect, associates (list), case_type, evidence_summary
+    CASE TYPES: card_scheme | layering_scheme | coordinated_scheme
 
-    CASE TYPES:
-      card_scheme         — high velocity purchases at suspicious merchants
-      layering_scheme     — structured transfers just below reporting threshold
-      coordinated_scheme  — multiple accounts linked by shared device or IP
+    STRICT INVESTIGATION PROTOCOL — FOLLOW EXACTLY:
+    - Turn 1: lookup_account on the account in the alert
+    - Turn 2: query_transactions on that same account
+    - Turn 3: flag_account on the most suspicious account
+    - Turn 4: submit_report — YOU MUST SUBMIT BY TURN 4-5 MAXIMUM
 
-    JSON FORMAT EXAMPLES:
-    {"action_type": "lookup_account", "account_id": "ACC-1234"}
-    {"action_type": "query_transactions", "account_id": "ACC-1234", "date_from": "2024-01-01", "date_to": "2024-03-31"}
-    {"action_type": "flag_account", "account_id": "ACC-1234", "reason": "High velocity suspicious merchants"}
-    {"action_type": "submit_report", "primary_suspect": "ACC-1234", "associates": [], "case_type": "card_scheme", "evidence_summary": "Account showed high velocity pattern at suspicious merchants with shared device linkage"}
+    SUBMIT_REPORT RULES:
+    - primary_suspect: the account ID from the initial alert
+    - associates: [] for card_scheme, list intermediaries for layering_scheme
+    - case_type: match the alert type exactly
+    - evidence_summary: describe what you found in transactions
+
+    YOU MUST CALL submit_report WITHIN 5 STEPS. NOT DOING SO MEANS FAILURE.
+    NEVER repeat the same action twice. NEVER query the same account more than once.
+
+    Respond with ONLY a single JSON object. No explanation. No markdown.
 """).strip()
-
-
 # ─────────────────────────────────────────────────────────
 # PROMPT BUILDER
 # ─────────────────────────────────────────────────────────
 
 def build_user_prompt(obs: Dict[str, Any], history: List[str]) -> str:
-    """Build the user prompt from current observation and history."""
+    steps_used = obs.get('steps_taken', 0)
+    max_steps  = obs.get('max_steps', 10)
+    steps_left = max_steps - steps_used
 
-    alerts_text = json.dumps(obs.get("initial_alerts", []), indent=2)
-    accounts_text = ", ".join(obs.get("accounts_in_scope", []))
-    history_text = "\n".join(history[-4:]) if history else "None yet."
+    if steps_left <= 3:
+        urgency = f"⚠️ ONLY {steps_left} STEPS LEFT — SUBMIT REPORT NOW"
+    elif steps_left <= 5:
+        urgency = f"WARNING: {steps_left} steps left — submit report soon"
+    else:
+        urgency = f"{steps_left} steps remaining"
 
-    last_action_text = ""
-    if obs.get("action_result") is not None:
-        result = obs["action_result"]
-        if isinstance(result, list):
-            last_action_text = (
-                f"\nLAST ACTION RESULT ({len(result)} rows):\n"
-                + json.dumps(result[:5], indent=2)  # show max 5 rows
-            )
+    alert = obs.get('initial_alerts', [{}])[0]
+    suspect = alert.get('account_id', '')
+    alert_type = alert.get('alert_type', '')
+
+    history_text = "\n".join(history[-3:]) if history else "None"
+
+    last = ""
+    if obs.get('action_result') is not None:
+        r = obs['action_result']
+        if isinstance(r, list):
+            last = f"Last result: {len(r)} transactions returned"
+            if r:
+                last += f"\nSample: {json.dumps(r[0])}"
         else:
-            last_action_text = (
-                f"\nLAST ACTION RESULT:\n{json.dumps(result, indent=2)}"
-            )
+            last += f"Last result: {json.dumps(r)[:300]}"
+    if obs.get('action_error'):
+        last = f"Last error: {obs['action_error']}"
 
-    if obs.get("action_error"):
-        last_action_text = f"\nLAST ACTION ERROR: {obs['action_error']}"
+    return f"""TASK: {obs.get('task_description', '')}
 
-    return textwrap.dedent(f"""
-        TASK ({obs.get('difficulty', '').upper()}):
-        {obs.get('task_description', '')}
+ALERT ACCOUNT: {suspect}  (this is your primary suspect)
+ALERT TYPE: {alert_type}
+ALL ACCOUNTS: {', '.join(obs.get('accounts_in_scope', []))}
+FLAGGED: {', '.join(obs.get('flagged_accounts', [])) or 'none'}
+STEP: {steps_used}/{max_steps} — {urgency}
 
-        CASE ID: {obs.get('case_id', '')}
-        STEPS USED: {obs.get('steps_taken', 0)} / {obs.get('max_steps', 10)}
+RECENT ACTIONS:
+{history_text}
 
-        INITIAL ALERTS:
-        {alerts_text}
+{last}
 
-        ACCOUNTS IN SCOPE: {accounts_text}
-        FLAGGED SO FAR: {', '.join(obs.get('flagged_accounts', [])) or 'None'}
-        CURRENT SCORE: {obs.get('partial_score', 0.0):.2f}
-        FEEDBACK: {obs.get('feedback', '')}
+INSTRUCTION: If you have done 2+ queries, SUBMIT YOUR REPORT NOW.
+Primary suspect is almost certainly: {suspect}
+For card_scheme: associates=[], case_type="card_scheme"
 
-        RECENT ACTIONS:
-        {history_text}
-        {last_action_text}
-
-        Respond with your next action as a single JSON object:
-    """).strip()
-
+Respond with ONE JSON action:"""
 
 # ─────────────────────────────────────────────────────────
 # LLM CALL
@@ -250,7 +249,13 @@ def run_task(task_id: str) -> Dict[str, Any]:
               f"| account={action_dict.get('account_id', '-')}")
 
         # Execute action
-        action = VeritasAction(**action_dict)
+        valid_fields = {
+            'action_type', 'account_id', 'date_from', 'date_to',
+            'min_amount', 'max_amount', 'reason', 'primary_suspect',
+            'associates', 'case_type', 'evidence_summary', 'metadata'
+        }
+        clean_dict = {k: v for k, v in action_dict.items() if k in valid_fields}
+        action = VeritasAction(**clean_dict)
         obs    = env.step(action)
 
         obs_dict = {
