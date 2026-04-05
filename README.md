@@ -68,18 +68,18 @@ open http://localhost:8000/docs
 
 | Task        | Difficulty | Score | Model              |
 |-------------|------------|-------|--------------------|
-| task_easy   | Easy       | X.XX  | Qwen2.5-72B        |
-| task_medium | Medium     | X.XX  | Qwen2.5-72B        |
-| task_hard   | Hard       | X.XX  | Qwen2.5-72B        |
-| Average     |            | X.XX  |                    |
+| task_easy   | Easy       | 0.00  | Qwen2.5-72B        |
+| task_medium | Medium     | 0.00  | Qwen2.5-72B        |
+| task_hard   | Hard       | 0.00  | Qwen2.5-72B        |
+| Average     |            | 0.00  |                    |
 
 *Scores to be updated after running inference.py*
 
 ## Live Demo
 
-- HF Space: https://huggingface.co/spaces/YOUR_USERNAME/veritas-ai
-- Interactive API docs: https://YOUR_USERNAME-veritas-ai.hf.space/docs
-- Health check: https://YOUR_USERNAME-veritas-ai.hf.space/health
+- HF Space: https://huggingface.co/spaces/ratnesh18/veritas-ai
+- Interactive API docs: https://ratnesh18-veritas-ai.hf.space/docs
+- Health check: https://ratnesh18-veritas-ai.hf.space/health
 
 ## Project Structure
 
