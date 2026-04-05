@@ -281,7 +281,7 @@ Result: **6/6 criteria passed** ✅
 ---
 
 ## Project Structure
-
+``` bash
 Veritas-AI/
 ├── models.py                     # VeritasAction, VeritasObservation, VeritasState
 ├── inference.py                  # Baseline agent (mandatory, root level)
@@ -306,8 +306,9 @@ Veritas-AI/
 └── scripts/
 └── validate_submission.sh    # Pre-submission checklist
 
-
+```
 ---
+
 
 ## Environment Variables
 
