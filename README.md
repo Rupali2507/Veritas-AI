@@ -1,8 +1,8 @@
 ---
-title: Vertias Ai Environment Server
-emoji: 🎭
-colorFrom: green
-colorTo: green
+title: Veritas AI Environment Server
+emoji: 🔍
+colorFrom: blue
+colorTo: indigo
 sdk: docker
 pinned: false
 app_port: 8000
@@ -11,245 +11,109 @@ tags:
   - openenv
 ---
 
-# Vertias Ai Environment
+# Veritas AI — Financial Crime Investigation Environment
 
-A simple test environment that echoes back messages. Perfect for testing the env APIs as well as demonstrating environment usage patterns.
+> An OpenEnv environment where an AI agent investigates
+> financial crime cases by querying accounts, gathering
+> evidence, and filing investigation reports.
 
-## Quick Start
+Built for the Meta PyTorch OpenEnv Hackathon 2026.
 
-The simplest way to use the Vertias Ai environment is through the `VertiasAiEnv` class:
+## What Is It?
 
-```python
-from Vertias_AI import VertiasAiAction, VertiasAiEnv
+Veritas AI puts an AI agent in the role of a fraud analyst at a financial institution. The agent receives an investigation case, then must query transaction histories, look up account profiles, flag suspicious accounts, and ultimately submit a formal investigation report — all within a limited number of steps. Every action the agent takes is evaluated by a task-specific grader that scores the quality of the final report.
 
-try:
-    # Create environment from Docker image
-    Vertias_AIenv = VertiasAiEnv.from_docker_image("Vertias_AI-env:latest")
+This environment mirrors real-world work done by fraud analysts at banks and fintechs every day. Analysts routinely trace money-laundering chains, spot card-fraud rings, and identify structured transactions designed to stay below regulatory reporting thresholds. By framing these challenges as RL tasks, Veritas AI enables AI systems to learn investigation strategies that are directly applicable to real financial crime detection pipelines.
 
-    # Reset
-    result = Vertias_AIenv.reset()
-    print(f"Reset: {result.observation.echoed_message}")
+## Tasks
 
-    # Send multiple messages
-    messages = ["Hello, World!", "Testing echo", "Final message"]
+| Task ID       | Difficulty | Max Steps | Description                          |
+|---------------|------------|-----------|--------------------------------------|
+| task_easy     | Easy       | 8         | Card scheme: spot high-velocity      |
+|               |            |           | purchases at suspicious merchants    |
+| task_medium   | Medium     | 12        | Layering scheme: trace money chain   |
+|               |            |           | structured below reporting threshold |
+| task_hard     | Hard       | 18        | Coordinated ring: find accounts      |
+|               |            |           | linked by shared device ID and IP    |
 
-    for msg in messages:
-        result = Vertias_AIenv.step(VertiasAiAction(message=msg))
-        print(f"Sent: '{msg}'")
-        print(f"  → Echoed: '{result.observation.echoed_message}'")
-        print(f"  → Length: {result.observation.message_length}")
-        print(f"  → Reward: {result.reward}")
+## Action Space
 
-finally:
-    # Always clean up
-    Vertias_AIenv.close()
-```
+| Action              | Required fields        | What it does                    |
+|---------------------|------------------------|---------------------------------|
+| query_transactions  | account_id             | Returns transaction rows        |
+| lookup_account      | account_id             | Returns full account profile    |
+| flag_account        | account_id, reason     | Marks account as suspicious     |
+| submit_report       | primary_suspect,       | Files final report, ends        |
+|                     | associates, case_type, | episode, triggers grader        |
+|                     | evidence_summary       |                                 |
 
-That's it! The `VertiasAiEnv.from_docker_image()` method handles:
-- Starting the Docker container
-- Waiting for the server to be ready
-- Connecting to the environment
-- Container cleanup when you call `close()`
-
-## Building the Docker Image
-
-Before using the environment, you need to build the Docker image:
+## Setup
 
 ```bash
-# From project root
-docker build -t Vertias_AI-env:latest -f server/Dockerfile .
+# Install dependencies
+pip install openenv-core fastapi uvicorn pydantic openai
+
+# Run locally
+python -m uvicorn server.app:app --host 0.0.0.0 --port 7860
+
+# Or with Docker (from project root)
+docker build -t veritas-ai:latest -f server/Dockerfile .
+docker run -p 8000:8000 veritas-ai:latest
+
+# Interactive API docs
+open http://localhost:8000/docs
 ```
 
-## Deploying to Hugging Face Spaces
+## Baseline Scores
 
-You can easily deploy your OpenEnv environment to Hugging Face Spaces using the `openenv push` command:
+| Task        | Difficulty | Score | Model              |
+|-------------|------------|-------|--------------------|
+| task_easy   | Easy       | X.XX  | Qwen2.5-72B        |
+| task_medium | Medium     | X.XX  | Qwen2.5-72B        |
+| task_hard   | Hard       | X.XX  | Qwen2.5-72B        |
+| Average     |            | X.XX  |                    |
 
-```bash
-# From the environment directory (where openenv.yaml is located)
-openenv push
+*Scores to be updated after running inference.py*
 
-# Or specify options
-openenv push --namespace my-org --private
-```
+## Live Demo
 
-The `openenv push` command will:
-1. Validate that the directory is an OpenEnv environment (checks for `openenv.yaml`)
-2. Prepare a custom build for Hugging Face Docker space (enables web interface)
-3. Upload to Hugging Face (ensuring you're logged in)
-
-### Prerequisites
-
-- Authenticate with Hugging Face: The command will prompt for login if not already authenticated
-
-### Options
-
-- `--directory`, `-d`: Directory containing the OpenEnv environment (defaults to current directory)
-- `--repo-id`, `-r`: Repository ID in format 'username/repo-name' (defaults to 'username/env-name' from openenv.yaml)
-- `--base-image`, `-b`: Base Docker image to use (overrides Dockerfile FROM)
-- `--private`: Deploy the space as private (default: public)
-
-### Examples
-
-```bash
-# Push to your personal namespace (defaults to username/env-name from openenv.yaml)
-openenv push
-
-# Push to a specific repository
-openenv push --repo-id my-org/my-env
-
-# Push with a custom base image
-openenv push --base-image ghcr.io/meta-pytorch/openenv-base:latest
-
-# Push as a private space
-openenv push --private
-
-# Combine options
-openenv push --repo-id my-org/my-env --base-image custom-base:latest --private
-```
-
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
-
-The deployed space includes:
-- **Web Interface** at `/web` - Interactive UI for exploring the environment
-- **API Documentation** at `/docs` - Full OpenAPI/Swagger interface
-- **Health Check** at `/health` - Container health monitoring
-- **WebSocket** at `/ws` - Persistent session endpoint for low-latency interactions
-
-## Environment Details
-
-### Action
-**VertiasAiAction**: Contains a single field
-- `message` (str) - The message to echo back
-
-### Observation
-**VertiasAiObservation**: Contains the echo response and metadata
-- `echoed_message` (str) - The message echoed back
-- `message_length` (int) - Length of the message
-- `reward` (float) - Reward based on message length (length × 0.1)
-- `done` (bool) - Always False for echo environment
-- `metadata` (dict) - Additional info like step count
-
-### Reward
-The reward is calculated as: `message_length × 0.1`
-- "Hi" → reward: 0.2
-- "Hello, World!" → reward: 1.3
-- Empty message → reward: 0.0
-
-## Advanced Usage
-
-### Connecting to an Existing Server
-
-If you already have a Vertias Ai environment server running, you can connect directly:
-
-```python
-from Vertias_AI import VertiasAiEnv
-
-# Connect to existing server
-Vertias_AIenv = VertiasAiEnv(base_url="<ENV_HTTP_URL_HERE>")
-
-# Use as normal
-result = Vertias_AIenv.reset()
-result = Vertias_AIenv.step(VertiasAiAction(message="Hello!"))
-```
-
-Note: When connecting to an existing server, `Vertias_AIenv.close()` will NOT stop the server.
-
-### Using the Context Manager
-
-The client supports context manager usage for automatic connection management:
-
-```python
-from Vertias_AI import VertiasAiAction, VertiasAiEnv
-
-# Connect with context manager (auto-connects and closes)
-with VertiasAiEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-    # Multiple steps with low latency
-    for msg in ["Hello", "World", "!"]:
-        result = env.step(VertiasAiAction(message=msg))
-        print(f"Echoed: {result.observation.echoed_message}")
-```
-
-The client uses WebSocket connections for:
-- **Lower latency**: No HTTP connection overhead per request
-- **Persistent session**: Server maintains your environment state
-- **Efficient for episodes**: Better for many sequential steps
-
-### Concurrent WebSocket Sessions
-
-The server supports multiple concurrent WebSocket connections. To enable this,
-modify `server/app.py` to use factory mode:
-
-```python
-# In server/app.py - use factory mode for concurrent sessions
-app = create_app(
-    VertiasAiEnvironment,  # Pass class, not instance
-    VertiasAiAction,
-    VertiasAiObservation,
-    max_concurrent_envs=4,  # Allow 4 concurrent sessions
-)
-```
-
-Then multiple clients can connect simultaneously:
-
-```python
-from Vertias_AI import VertiasAiAction, VertiasAiEnv
-from concurrent.futures import ThreadPoolExecutor
-
-def run_episode(client_id: int):
-    with VertiasAiEnv(base_url="http://localhost:8000") as env:
-        result = env.reset()
-        for i in range(10):
-            result = env.step(VertiasAiAction(message=f"Client {client_id}, step {i}"))
-        return client_id, result.observation.message_length
-
-# Run 4 episodes concurrently
-with ThreadPoolExecutor(max_workers=4) as executor:
-    results = list(executor.map(run_episode, range(4)))
-```
-
-## Development & Testing
-
-### Direct Environment Testing
-
-Test the environment logic directly without starting the HTTP server:
-
-```bash
-# From the server directory
-python3 server/Vertias_AI_environment.py
-```
-
-This verifies that:
-- Environment resets correctly
-- Step executes actions properly
-- State tracking works
-- Rewards are calculated correctly
-
-### Running Locally
-
-Run the server locally for development:
-
-```bash
-uvicorn server.app:app --reload
-```
+- HF Space: https://huggingface.co/spaces/YOUR_USERNAME/veritas-ai
+- Interactive API docs: https://YOUR_USERNAME-veritas-ai.hf.space/docs
+- Health check: https://YOUR_USERNAME-veritas-ai.hf.space/health
 
 ## Project Structure
 
 ```
-Vertias_AI/
-├── .dockerignore         # Docker build exclusions
-├── __init__.py            # Module exports
-├── README.md              # This file
-├── openenv.yaml           # OpenEnv manifest
-├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (generated)
-├── client.py              # VertiasAiEnv client
-├── models.py              # Action and Observation models
-└── server/
-    ├── __init__.py        # Server module exports
-    ├── Vertias_AI_environment.py  # Core environment logic
-    ├── app.py             # FastAPI application (HTTP + WebSocket endpoints)
-    └── Dockerfile         # Container image definition
+Veritas-AI/
+├── README.md                          # This file
+├── openenv.yaml                       # OpenEnv manifest
+├── pyproject.toml                     # Project metadata and dependencies
+├── uv.lock                            # Locked dependencies
+├── models.py                          # VeritasAction, VeritasObservation, VeritasState
+├── inference.py                       # Baseline agent script
+├── client.py                          # Environment client
+├── veritas_env/
+│   ├── environment.py                 # reset() / step() / state
+│   ├── tasks.py                       # 3 tasks with graders
+│   ├── reward.py                      # Reward constants and calculators
+│   ├── data_generator.py              # Synthetic scenario generator
+│   └── __init__.py
+├── server/
+│   ├── app.py                         # FastAPI server
+│   ├── Vertias_AI_environment.py      # Bridge file
+│   ├── Dockerfile                     # Container image definition
+│   ├── requirements.txt               # Server dependencies
+│   └── __init__.py
+└── scripts/
+    └── validate_submission.sh         # Pre-submission checklist
 ```
+
+## Environment Variables
+
+Set these in HF Space settings under "Repository secrets":
+
+| Variable      | Value                                    |
+|---------------|------------------------------------------|
+| API_BASE_URL  | https://router.huggingface.co/v1         |
+| MODEL_NAME    | Qwen/Qwen2.5-72B-Instruct                |
+| HF_TOKEN      | your HuggingFace token (hf_...)          |
