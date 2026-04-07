@@ -18,8 +18,21 @@ Three models define the complete data contract:
 """
 
 from typing import Any, Dict, List, Optional
-from openenv.core.env_server.types import Action, Observation, State
-from pydantic import Field
+from pydantic import BaseModel, Field
+
+try:
+    from openenv.core.env_server.types import Action, Observation, State
+except ImportError:
+    # Stubs for standalone inference (validator runs without openenv-core)
+    class Action(BaseModel):       # type: ignore[no-redef]
+        pass
+    class Observation(BaseModel):  # type: ignore[no-redef]
+        done: bool = False
+        reward: float = 0.0
+        metadata: dict = {}
+    class State(BaseModel):        # type: ignore[no-redef]
+        episode_id: str = ""
+        step_count: int = 0
 
 
 # ─────────────────────────────────────────────────────────

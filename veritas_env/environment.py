@@ -25,7 +25,13 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from openenv.core.env_server.interfaces import Environment
+# from openenv.core.env_server.interfaces import Environment
+try:
+    from openenv.core.env_server.interfaces import Environment
+except ImportError:
+    class Environment:  # type: ignore[no-redef]
+        """Stub for when openenv-core is not installed (e.g. standalone inference)."""
+        pass
 from models import (
     VeritasAction,
     VeritasObservation,
