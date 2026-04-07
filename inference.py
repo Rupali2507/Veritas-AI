@@ -33,30 +33,23 @@ from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
-# ── Add project root to path ──────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from veritas_env.environment import VeritasEnvironment
 from veritas_env.tasks import TASK_ORDER, TASKS
 from models import VeritasAction
 
-# ── Credentials from environment variables ────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 API_KEY      = os.getenv("HF_TOKEN")
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
-# ── Episode config ────────────────────────────────────────
 MAX_STEPS   = 12
 TEMPERATURE = 0.1
 MAX_TOKENS  = 512
 
-# ── OpenAI client (mandatory per hackathon spec) ──────────
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 
-# ─────────────────────────────────────────────────────────
-# SYSTEM PROMPT
-# ─────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = textwrap.dedent("""
     You are Veritas, a financial crime analyst. You investigate cases efficiently.
@@ -86,9 +79,7 @@ SYSTEM_PROMPT = textwrap.dedent("""
 
     Respond with ONLY a single JSON object. No explanation. No markdown.
 """).strip()
-# ─────────────────────────────────────────────────────────
-# PROMPT BUILDER
-# ─────────────────────────────────────────────────────────
+
 
 def build_user_prompt(obs: Dict[str, Any], history: List[str]) -> str:
     steps_used = obs.get('steps_taken', 0)
@@ -139,9 +130,7 @@ For card_scheme: associates=[], case_type="card_scheme"
 
 Respond with ONE JSON action:"""
 
-# ─────────────────────────────────────────────────────────
-# LLM CALL
-# ─────────────────────────────────────────────────────────
+
 
 def call_llm(messages: List[Dict]) -> str:
     """Call the LLM via OpenAI client. Returns response text."""
@@ -165,7 +154,7 @@ def parse_action(response_text: str) -> Optional[Dict]:
 
     text = response_text.strip()
 
-    # Strip markdown fences if present
+   
     if "```" in text:
         parts = text.split("```")
         for part in parts:
@@ -174,7 +163,7 @@ def parse_action(response_text: str) -> Optional[Dict]:
                 text = part
                 break
 
-    # Find first { ... } block
+   
     start = text.find("{")
     end   = text.rfind("}") + 1
     if start == -1 or end == 0:
@@ -186,129 +175,113 @@ def parse_action(response_text: str) -> Optional[Dict]:
         return None
 
 
-# ─────────────────────────────────────────────────────────
-# SINGLE TASK RUNNER
-# ─────────────────────────────────────────────────────────
+
 
 def run_task(task_id: str) -> Dict[str, Any]:
-    """Run one full investigation episode. Returns result dict."""
     task = TASKS[task_id]
 
-    print(f"\n{'='*60}")
-    print(f"TASK : {task_id}  ({task.difficulty.upper()})")
-    print(f"{'='*60}")
+  
+    print(f"[START] task={task_id}", flush=True)
 
-    env     = VeritasEnvironment(task_id=task_id)
-    obs     = env.reset()
+    env = VeritasEnvironment(task_id=task_id)
+    obs = env.reset()
+
     obs_dict = {
-        "case_id":          obs.case_id,
+        "case_id": obs.case_id,
         "task_description": obs.task_description,
-        "difficulty":       obs.difficulty,
-        "initial_alerts":   obs.initial_alerts,
-        "accounts_in_scope":obs.accounts_in_scope,
+        "difficulty": obs.difficulty,
+        "initial_alerts": obs.initial_alerts,
+        "accounts_in_scope": obs.accounts_in_scope,
         "flagged_accounts": obs.flagged_accounts,
-        "action_result":    obs.action_result,
-        "action_error":     obs.action_error,
-        "partial_score":    obs.partial_score,
-        "feedback":         obs.feedback,
-        "steps_taken":      obs.steps_taken,
-        "max_steps":        obs.max_steps,
-        "done":             obs.done,
+        "action_result": obs.action_result,
+        "action_error": obs.action_error,
+        "partial_score": obs.partial_score,
+        "feedback": obs.feedback,
+        "steps_taken": obs.steps_taken,
+        "max_steps": obs.max_steps,
+        "done": obs.done,
     }
 
-    history:    List[str] = []
-    best_score: float     = 0.0
+    history = []
+    best_score = 0.0
 
     for step in range(1, MAX_STEPS + 1):
         if obs_dict.get("done"):
             break
 
-        # Build prompt and call LLM
         user_prompt = build_user_prompt(obs_dict, history)
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": user_prompt},
+            {"role": "user", "content": user_prompt},
         ]
 
         response_text = call_llm(messages)
-        action_dict   = parse_action(response_text)
+        action_dict = parse_action(response_text)
 
+        
         if not action_dict or "action_type" not in action_dict:
-            print(f"  Step {step}: [parse failed] raw={response_text[:80]}")
-            # Default to a safe fallback — look up the first alert account
-            alert_account = (obs_dict.get("initial_alerts") or [{}])[0].get(
-                "account_id", ""
-            )
+            alert_account = (obs_dict.get("initial_alerts") or [{}])[0].get("account_id", "")
             action_dict = {
                 "action_type": "lookup_account",
-                "account_id":  alert_account,
+                "account_id": alert_account,
             }
 
-        action_type = action_dict.get("action_type", "")
-        print(f"  Step {step}: {action_type} "
-              f"| account={action_dict.get('account_id', '-')}")
-
-        # Execute action
         valid_fields = {
             'action_type', 'account_id', 'date_from', 'date_to',
             'min_amount', 'max_amount', 'reason', 'primary_suspect',
             'associates', 'case_type', 'evidence_summary', 'metadata'
         }
+
         clean_dict = {k: v for k, v in action_dict.items() if k in valid_fields}
         action = VeritasAction(**clean_dict)
-        obs    = env.step(action)
+
+        obs = env.step(action)
+
+       
+        print(f"[STEP] step={step} reward={float(obs.reward or 0.0)}", flush=True)
 
         obs_dict = {
-            "case_id":          obs.case_id,
+            "case_id": obs.case_id,
             "task_description": obs.task_description,
-            "difficulty":       obs.difficulty,
-            "initial_alerts":   obs.initial_alerts,
-            "accounts_in_scope":obs.accounts_in_scope,
+            "difficulty": obs.difficulty,
+            "initial_alerts": obs.initial_alerts,
+            "accounts_in_scope": obs.accounts_in_scope,
             "flagged_accounts": obs.flagged_accounts,
-            "action_result":    obs.action_result,
-            "action_error":     obs.action_error,
-            "partial_score":    obs.partial_score,
-            "feedback":         obs.feedback,
-            "steps_taken":      obs.steps_taken,
-            "max_steps":        obs.max_steps,
-            "done":             obs.done,
+            "action_result": obs.action_result,
+            "action_error": obs.action_error,
+            "partial_score": obs.partial_score,
+            "feedback": obs.feedback,
+            "steps_taken": obs.steps_taken,
+            "max_steps": obs.max_steps,
+            "done": obs.done,
         }
 
-        score    = obs.partial_score
-        feedback = obs.feedback
-
+        score = obs.partial_score
         if score > best_score:
             best_score = score
 
-        history.append(
-            f"Step {step}: {action_type} "
-            f"account={action_dict.get('account_id', '-')} "
-            f"→ score={score:.2f} | {feedback[:60]}"
-        )
-
-        print(f"         score={score:.2f} | {feedback[:70]}")
+        history.append(f"step={step}")
 
         if obs_dict.get("done"):
             break
 
-    state  = env.state
-    solved = state.solved
+    state = env.state
 
-    print(f"\n  RESULT: best_score={best_score:.2f} "
-          f"solved={solved} steps={state.step_count}")
+    
+    print(
+        f"[END] task={task_id} score={float(best_score)} steps={int(state.step_count)}",
+        flush=True
+    )
 
     return {
-        "task_id":    task_id,
+        "task_id": task_id,
         "difficulty": task.difficulty,
         "best_score": round(best_score, 4),
-        "solved":     solved,
-        "steps":      state.step_count,
+        "solved": state.solved,
+        "steps": state.step_count,
     }
 
 
-# ─────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────
 
 def main() -> None:
     print("\n" + "="*60)
@@ -339,7 +312,7 @@ def main() -> None:
     print(f"  Total runtime : {total_time:.1f}s")
     print("="*60 + "\n")
 
-    # Machine-readable output for judges
+    
     output = {
         "model":      MODEL_NAME,
         "scores":     results,
