@@ -42,7 +42,7 @@ from models import VeritasAction
 
 # ── Credentials from environment variables ────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "hf_placeholder")
+API_KEY      = os.getenv("HF_TOKEN")
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
 # ── Episode config ────────────────────────────────────────
