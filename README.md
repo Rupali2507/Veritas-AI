@@ -1,4 +1,4 @@
-<!-- ---
+---
 title: Veritas AI Environment Server
 emoji: 🔍
 colorFrom: blue
@@ -8,7 +8,8 @@ pinned: false
 app_port: 7860
 tags:
   - openenv
---- -->
+---
+
 
 # Veritas AI — Financial Crime Investigation Environment
 
