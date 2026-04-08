@@ -1,17 +1,36 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
-
 """
-inference.py — Veritas AI inference script.
+Inference Script — Veritas AI
+===================================
+MANDATORY
+- Before submitting, ensure the following variables are defined in your environment:
+    API_BASE_URL   The API endpoint for the LLM.
+    MODEL_NAME     The model identifier to use for inference.
+    HF_TOKEN       Your Hugging Face / API key.
 
-MANDATORY requirements:
-  - Uses OpenAI client for all LLM calls
-  - Reads API_BASE_URL, MODEL_NAME, HF_TOKEN from environment
-  - Prints [START]/[STEP]/[END] blocks to stdout with flush=True
-  - Must complete within 20 minutes
+- Defaults:
+    API_BASE_URL = "https://router.huggingface.co/v1"
+    MODEL_NAME   = "meta-llama/Llama-3.1-8B-Instruct"
+
+STDOUT FORMAT
+    [START] task=<task_id> env=veritas model=<model_name>
+    [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
+    [END]   success=<true|false> steps=<n> score=<score> rewards=<r1,r2,...,rn>
+
+  Rules:
+    - One [START] per task episode.
+    - One [STEP] per step, immediately after env.step() returns.
+    - One [END] after env.close() / episode end (always emitted, even on exception).
+    - reward and rewards are formatted to 2 decimal places.
+    - done and success are lowercase booleans: true or false.
+    - error is the raw action_error string, or null if none.
+    - All fields on a single line with no newlines within a line.
+    - score is in [0, 1].
+
+  Example:
+    [START] task=task_easy env=veritas model=meta-llama/Llama-3.1-8B-Instruct
+    [STEP] step=1 action={"action_type":"lookup_account","account_id":"ACC-001"} reward=0.00 done=false error=null
+    [STEP] step=2 action={"action_type":"submit_report",...} reward=1.00 done=true error=null
+    [END] success=true steps=2 score=1.00 rewards=0.00,1.00
 """
 
 import json
@@ -19,15 +38,14 @@ import os
 import sys
 import time
 import textwrap
+from dataclasses import dataclass, field as _field
 from typing import Any, Dict, List, Optional
 
-# ── Path setup — MUST be before all local imports ──────────────────────────
+# ── Path setup ──────────────────────────────────────────────────────────────
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
 
-# ── Hardcoded task definitions (always available, no import needed) ─────────
-from dataclasses import dataclass, field as _field
-
+# ── Hardcoded task definitions (fallback) ───────────────────────────────────
 @dataclass
 class _Task:
     task_id: str
@@ -44,13 +62,12 @@ TASKS = {
 }
 TASK_ORDER = ["task_easy", "task_medium", "task_hard"]
 
-# ── Try to import real tasks (overrides hardcoded if it works) ─────────────
 try:
     from veritas_env.tasks import TASK_ORDER, TASKS  # noqa: F811
 except Exception:
-    pass  # keep hardcoded fallback
+    pass
 
-# ── Try to import environment ──────────────────────────────────────────────
+# ── Environment & model imports ─────────────────────────────────────────────
 ENV_AVAILABLE = False
 try:
     from veritas_env.environment import VeritasEnvironment
@@ -58,7 +75,6 @@ try:
 except Exception:
     pass
 
-# ── Try to import VeritasAction ────────────────────────────────────────────
 MODELS_AVAILABLE = False
 try:
     from models import VeritasAction
@@ -66,17 +82,19 @@ try:
 except Exception:
     pass
 
-# ── Credentials ────────────────────────────────────────────────────────────
+# ── Credentials & config ────────────────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 API_KEY      = os.getenv("HF_TOKEN", "dummy-key")
 MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+BENCHMARK    = "veritas"
 
 LLM_TIMEOUT  = 20
 MAX_STEPS    = 10
 TEMPERATURE  = 0.1
 MAX_TOKENS   = 512
+SUCCESS_SCORE_THRESHOLD = 0.1  # normalized score in [0, 1]
 
-# ── OpenAI client ──────────────────────────────────────────────────────────
+# ── OpenAI client ───────────────────────────────────────────────────────────
 LLM_AVAILABLE = False
 _client = None
 try:
@@ -91,10 +109,7 @@ try:
 except Exception:
     pass
 
-# ──────────────────────────────────────────────────────────────────────────
-# CONSTANTS
-# ──────────────────────────────────────────────────────────────────────────
-
+# ── Constants ───────────────────────────────────────────────────────────────
 CASE_TYPE_MAP = {
     "velocity_anomaly":     "card_scheme",
     "structuring_pattern":  "layering_scheme",
@@ -112,6 +127,30 @@ VALID_FIELDS = {
     "min_amount", "max_amount", "reason", "primary_suspect",
     "associates", "case_type", "evidence_summary",
 }
+
+# ──────────────────────────────────────────────────────────────────────────
+# LOGGING HELPERS  (matching sample script format exactly)
+# ──────────────────────────────────────────────────────────────────────────
+
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_val = error if error else "null"
+    done_val  = str(done).lower()
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True,
+    )
+
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
+        flush=True,
+    )
 
 # ──────────────────────────────────────────────────────────────────────────
 # RULE-BASED FALLBACK
@@ -198,7 +237,8 @@ def _call_llm(messages: List[Dict]) -> str:
             temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
         )
         return resp.choices[0].message.content or ""
-    except Exception:
+    except Exception as exc:
+        print(f"[DEBUG] LLM call failed: {exc}", flush=True)
         return ""
 
 
@@ -223,159 +263,173 @@ def _parse(text: str) -> Optional[Dict]:
 # ──────────────────────────────────────────────────────────────────────────
 # TASK RUNNER
 # ──────────────────────────────────────────────────────────────────────────
-# ONLY showing modified parts — rest of your file remains SAME
-
-# ──────────────────────────────────────────────────────────────────────────
-# TASK RUNNER (UPDATED)
-# ──────────────────────────────────────────────────────────────────────────
 
 def run_task(task_id: str) -> Dict[str, Any]:
-    task = TASKS[task_id]
-    rewards = []
+    task    = TASKS[task_id]
+    rewards: List[float] = []
+    steps_taken = 0
+    best_score  = 0.0
+    success     = False
 
+    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+
+    # ── Early-exit if env / models not available ───────────────────────────
     if not ENV_AVAILABLE or not MODELS_AVAILABLE:
         rewards.append(0.0)
-        print(f"[START] task={task_id}", flush=True)
-        print(f"[STEP] step=1 reward=0.0", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        log_step(step=1, action="null", reward=0.0, done=True, error="env_unavailable")
+        log_end(success=False, steps=1, score=0.0, rewards=rewards)
         return {"task_id": task_id, "difficulty": task.difficulty,
                 "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
     try:
         env = VeritasEnvironment(task_id=task_id)
         obs = env.reset()
-    except Exception:
+    except Exception as exc:
         rewards.append(0.0)
-        print(f"[START] task={task_id}", flush=True)
-        print(f"[STEP] step=1 reward=0.0", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        log_step(step=1, action="null", reward=0.0, done=True, error=str(exc))
+        log_end(success=False, steps=1, score=0.0, rewards=rewards)
         return {"task_id": task_id, "difficulty": task.difficulty,
                 "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
     def _obs_to_dict(o):
         return {
-            "initial_alerts": o.initial_alerts,
+            "initial_alerts":    o.initial_alerts,
             "accounts_in_scope": o.accounts_in_scope,
-            "flagged_accounts": o.flagged_accounts,
-            "action_result": o.action_result,
-            "action_error": o.action_error,
-            "partial_score": o.partial_score,
-            "steps_taken": o.steps_taken,
-            "max_steps": o.max_steps,
-            "done": o.done,
+            "flagged_accounts":  o.flagged_accounts,
+            "action_result":     o.action_result,
+            "action_error":      o.action_error,
+            "partial_score":     o.partial_score,
+            "steps_taken":       o.steps_taken,
+            "max_steps":         o.max_steps,
+            "done":              o.done,
         }
 
     obs_dict = _obs_to_dict(obs)
     fallback = _rule_actions(obs_dict)
-    best_score = 0.0
 
-    for step in range(1, MAX_STEPS + 1):
-        if obs_dict.get("done"):
-            break
-
-        action_dict = None
-        if LLM_AVAILABLE and step <= 6:
-            msgs = [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": _build_prompt(obs_dict, step)},
-            ]
-            action_dict = _parse(_call_llm(msgs))
-
-        if not action_dict or "action_type" not in action_dict:
-            action_dict = fallback[min(step - 1, len(fallback) - 1)]
-
-        clean = {k: v for k, v in action_dict.items() if k in VALID_FIELDS}
-
-        try:
-            action = VeritasAction(**clean)
-            obs = env.step(action)
-        except Exception:
-            alert = (obs_dict.get("initial_alerts") or [{}])[0]
-            suspect = alert.get("account_id", "")
-            atype = alert.get("alert_type", "velocity_anomaly")
-            ct = CASE_TYPE_MAP.get(atype, "card_scheme")
-            accts = obs_dict.get("accounts_in_scope", [])
-            assoc = [a for a in accts if a != suspect] if ct != "card_scheme" else []
-            try:
-                obs = env.step(VeritasAction(
-                    action_type="submit_report",
-                    primary_suspect=suspect,
-                    associates=assoc,
-                    case_type=ct,
-                    evidence_summary=EVIDENCE_TEXT,
-                ))
-            except Exception:
-                rewards.append(0.0)
+    task_max_steps = task.max_steps  # respect per-task step budget
+    try:
+        for step in range(1, task_max_steps + 1):
+            if obs_dict.get("done"):
                 break
 
-        reward = float(getattr(obs, "reward", 0.0) or 0.0)
-        rewards.append(reward)
+            # ── Decide action ──────────────────────────────────────────────
+            action_dict = None
+            if LLM_AVAILABLE and step <= 6:
+                msgs = [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user",   "content": _build_prompt(obs_dict, step)},
+                ]
+                action_dict = _parse(_call_llm(msgs))
 
-        obs_dict = _obs_to_dict(obs)
+            if not action_dict or "action_type" not in action_dict:
+                action_dict = fallback[min(step - 1, len(fallback) - 1)]
 
-        ps = float(getattr(obs, "partial_score", 0.0) or 0.0)
-        if ps > best_score:
-            best_score = ps
+            clean      = {k: v for k, v in action_dict.items() if k in VALID_FIELDS}
+            action_str = json.dumps(clean, separators=(",", ":"))
 
-        if obs_dict.get("done"):
-            break
+            # ── Step the environment ───────────────────────────────────────
+            error_msg: Optional[str] = None
+            try:
+                action = VeritasAction(**clean)
+                obs    = env.step(action)
+            except Exception as exc:
+                error_msg = str(exc)
+                # Fallback: force a submit_report
+                alert   = (obs_dict.get("initial_alerts") or [{}])[0]
+                suspect = alert.get("account_id", "")
+                atype   = alert.get("alert_type", "velocity_anomaly")
+                ct      = CASE_TYPE_MAP.get(atype, "card_scheme")
+                accts   = obs_dict.get("accounts_in_scope", [])
+                assoc   = [a for a in accts if a != suspect] if ct != "card_scheme" else []
+                try:
+                    fallback_action = VeritasAction(
+                        action_type="submit_report",
+                        primary_suspect=suspect,
+                        associates=assoc,
+                        case_type=ct,
+                        evidence_summary=EVIDENCE_TEXT,
+                    )
+                    obs = env.step(fallback_action)
+                    action_str = json.dumps({
+                        "action_type": "submit_report",
+                        "primary_suspect": suspect,
+                        "case_type": ct,
+                    }, separators=(",", ":"))
+                except Exception as exc2:
+                    rewards.append(0.0)
+                    log_step(step=step, action=action_str, reward=0.0, done=True, error=str(exc2))
+                    steps_taken = step
+                    break
 
-    try:
-        state = env.state
-        step_count = int(state.step_count)
-        solved = bool(state.solved)
-    except Exception:
-        step_count = len(rewards)
-        solved = False
+            reward   = float(getattr(obs, "reward", 0.0) or 0.0)
+            done     = bool(obs_dict.get("done") or getattr(obs, "done", False))
+            rewards.append(reward)
+            steps_taken = step
 
-    print(f"[START] task={task_id}", flush=True)
-    for i, r in enumerate(rewards):
-        print(f"[STEP] step={i+1} reward={r}", flush=True)
-    print(f"[END] task={task_id} score={round(best_score,4)} steps={step_count}", flush=True)
+            obs_dict = _obs_to_dict(obs)
+            done     = bool(obs_dict.get("done", done))
+
+            ps = float(getattr(obs, "partial_score", 0.0) or 0.0)
+            if ps > best_score:
+                best_score = ps
+
+            log_step(step=step, action=action_str, reward=reward, done=done, error=error_msg)
+
+            if done:
+                break
+
+        # ── Retrieve final env state ───────────────────────────────────────
+        try:
+            state       = env.state
+            steps_taken = int(state.step_count)
+            solved      = bool(state.solved)
+        except Exception:
+            solved = False
+
+    finally:
+        try:
+            env.close()
+        except Exception as exc:
+            print(f"[DEBUG] env.close() error: {exc}", flush=True)
+
+    score   = min(max(best_score, 0.0), 1.0)
+    success = score >= SUCCESS_SCORE_THRESHOLD
+    log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
     return {
-        "task_id": task_id,
+        "task_id":    task_id,
         "difficulty": task.difficulty,
-        "best_score": round(best_score, 4),
-        "solved": solved,
-        "steps": step_count,
-        "rewards": rewards,
+        "best_score": round(score, 4),
+        "solved":     solved,
+        "steps":      steps_taken,
+        "rewards":    rewards,
     }
 
-
 # ──────────────────────────────────────────────────────────────────────────
-# MAIN (FIXED — NO DUPLICATE PRINTING)
+# MAIN
 # ──────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     results = []
-    t0 = time.time()
 
     for task_id in TASK_ORDER:
         try:
             result = run_task(task_id)
             results.append(result)
-        except Exception:
-            print(f"[START] task={task_id}", flush=True)
-            print(f"[STEP] step=1 reward=0.0", flush=True)
-            print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        except Exception as exc:
+            print(f"[DEBUG] run_task({task_id}) crashed: {exc}", flush=True)
+            log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+            log_step(step=1, action="null", reward=0.0, done=True, error=str(exc))
+            log_end(success=False, steps=1, score=0.0, rewards=[0.0])
             results.append({
-                "task_id": task_id,
+                "task_id":    task_id,
                 "difficulty": TASKS[task_id].difficulty,
                 "best_score": 0.0,
-                "solved": False,
-                "steps": 1,
+                "solved":     False,
+                "steps":      1,
+                "rewards":    [0.0],
             })
-
-    avg = sum(r["best_score"] for r in results) / max(len(results), 1)
-    rt = round(time.time() - t0, 1)
-    
-    # print("JSON_RESULTS:", json.dumps({
-    #     "model":     MODEL_NAME,
-    #     "scores":    results,
-    #     "avg_score": round(avg, 4),
-    #     "runtime_s": rt,
-    # }), flush=True)
 
 
 if __name__ == "__main__":
