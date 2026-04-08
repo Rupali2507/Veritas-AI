@@ -3,7 +3,6 @@ __pycache__/
 myenv/
 .env__pycache__/
 *.pyc
-uv.lock
 venv/
 venv/
 /venv
