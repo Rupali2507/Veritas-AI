@@ -11,10 +11,6 @@ Implements the three OpenEnv methods:
   reset()  → VeritasObservation   (start new episode)
   step()   → VeritasObservation   (take one action)
   state    → VeritasState         (episode metadata)
-
-This class is instantiated once per server process.
-All episode state lives in instance variables — reset()
-clears everything cleanly for a new episode.
 """
 
 import random
@@ -25,13 +21,14 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# from openenv.core.env_server.interfaces import Environment
 try:
     from openenv.core.env_server.interfaces import Environment
-except ImportError:
+except Exception:
     class Environment:  # type: ignore[no-redef]
-        """Stub for when openenv-core is not installed (e.g. standalone inference)."""
-        pass
+        """Stub for when openenv-core is not installed (standalone inference)."""
+        def __init__(self, *args, **kwargs):
+            pass
+
 from models import (
     VeritasAction,
     VeritasObservation,
@@ -48,28 +45,19 @@ from veritas_env.tasks import TASKS, GRADERS, TASK_ORDER
 class VeritasEnvironment(Environment):
     """
     Veritas AI Financial Crime Investigation Environment.
-
-    The agent plays the role of a financial crime analyst.
-    It queries accounts and transactions, flags suspicious
-    accounts, and submits a final investigation report.
-
-    Episode lifecycle:
-      1. reset()        — fresh scenario generated
-      2. step() × N    — agent investigates
-      3. submit_report  — grader scores the report, done=True
-      (or max_steps reached — done=True, partial score returned)
     """
 
     def __init__(self, task_id=None):
-        """
-        Args:
-            task_id: pin to one task, or None to cycle through all.
-        """
-        super().__init__()
-        self._task_id_override  = task_id
-        self._episode_index     = 0   # cycles through TASK_ORDER
+        # Safely call super().__init__() — the openenv base class may
+        # require a server context that isn't present during standalone inference.
+        try:
+            super().__init__()
+        except Exception:
+            pass  # Safe to ignore — we don't need the server context here
 
-        # Episode state — all reset in reset()
+        self._task_id_override  = task_id
+        self._episode_index     = 0
+
         self._scenario:   Optional[Dict] = None
         self._task_id:    str = ""
         self._episode_id: str = ""
@@ -85,10 +73,9 @@ class VeritasEnvironment(Environment):
     # reset()
     # ─────────────────────────────────────────────────────
 
-    def reset(self, seed=None, episode_id=None, **kwargs) -> VeritasObservation:  
+    def reset(self, seed=None, episode_id=None, **kwargs) -> VeritasObservation:
         """Start a fresh episode with a new scenario."""
 
-        # Pick task
         if self._task_id_override:
             self._task_id = self._task_id_override
         else:
@@ -99,11 +86,9 @@ class VeritasEnvironment(Environment):
 
         task = TASKS[self._task_id]
 
-        # Generate fresh scenario
         self._seed       = random.randint(0, 999_999)
         self._scenario   = generate_scenario(self._task_id, self._seed)
 
-        # Reset all episode state
         self._episode_id         = str(uuid.uuid4())
         self._step_count         = 0
         self._flagged            = []
@@ -113,28 +98,22 @@ class VeritasEnvironment(Environment):
         self._investigation_log  = []
 
         return VeritasObservation(
-            # Episode context
             case_id          = self._scenario["case_id"],
             task_id          = self._task_id,
             difficulty       = task.difficulty,
             task_description = task.description,
-            # What the agent sees at the start
             initial_alerts   = self._scenario["alerts"],
             accounts_in_scope= self._scenario["accounts_in_scope"],
             flagged_accounts = [],
-            # No action taken yet
             action_result    = None,
             action_error     = None,
-            # Progress
             partial_score    = 0.0,
             feedback         = (
                 "New case opened. Review the alerts and begin "
                 "your investigation."
             ),
-            # OpenEnv base fields
             done             = False,
             reward           = 0.0,
-            # Step tracking
             steps_taken      = 0,
             max_steps        = task.max_steps,
         )
@@ -144,10 +123,7 @@ class VeritasEnvironment(Environment):
     # ─────────────────────────────────────────────────────
 
     def step(self, action: VeritasAction, timeout_s=None, **kwargs) -> VeritasObservation:
-        """
-        Execute one action and return updated observation.
-        Never raises — all errors returned in action_error field.
-        """
+        """Execute one action and return updated observation."""
         if self._scenario is None:
             return self._error_obs("Call reset() before step().")
 
@@ -157,11 +133,10 @@ class VeritasEnvironment(Environment):
             )
 
         self._step_count += 1
-        task     = TASKS[self._task_id]
+        task      = TASKS[self._task_id]
         max_steps = task.max_steps
 
-        # Route to handler
-        action_type = (action.action_type or "").strip().lower()
+        action_type   = (action.action_type or "").strip().lower()
         action_result = None
         action_error  = None
         reward        = 0.0
@@ -197,9 +172,7 @@ class VeritasEnvironment(Environment):
                     correct_suspect    = self._scenario["primary_suspect"],
                     correct_associates = self._scenario["associates"],
                 )
-                feedback = (
-                    f"Account profile retrieved for {action.account_id}."
-                )
+                feedback = f"Account profile retrieved for {action.account_id}."
 
         elif action_type == "flag_account":
             action_result, action_error = self._handle_flag(action)
@@ -233,20 +206,17 @@ class VeritasEnvironment(Environment):
                 "Must be one of: query_transactions | lookup_account "
                 "| flag_account | submit_report"
             )
-            reward = -0.05   # penalty for invalid action
+            reward = -0.05
 
-        # Update running totals
         self._cumulative_reward += reward
         if partial_score > self._best_score:
             self._best_score = partial_score
 
-        # Log this action
         self._investigation_log.append(
             f"Step {self._step_count}: {action_type} "
-            f"→ reward={reward:+.3f}"
+            f"-> reward={reward:+.3f}"
         )
 
-        # Check episode termination
         done = self._solved or (self._step_count >= max_steps)
         if done and not self._solved:
             feedback += (
@@ -295,23 +265,16 @@ class VeritasEnvironment(Environment):
     # Action handlers (private)
     # ─────────────────────────────────────────────────────
 
-    def _handle_query(
-        self, action: VeritasAction
-    ) -> tuple[Optional[List], Optional[str]]:
-        """Handle query_transactions action."""
+    def _handle_query(self, action):
         if not action.account_id:
             return None, "account_id is required for query_transactions."
-
         acc_id = action.account_id
         if acc_id not in self._scenario["accounts"]:
             return None, f"Account '{acc_id}' not found in this case."
-
         txns = [
             t for t in self._scenario["transactions"]
             if t["from_account"] == acc_id or t["to_account"] == acc_id
         ]
-
-        # Apply optional filters
         if action.date_from:
             txns = [t for t in txns if t["date"] >= action.date_from]
         if action.date_to:
@@ -320,42 +283,25 @@ class VeritasEnvironment(Environment):
             txns = [t for t in txns if t["amount"] >= action.min_amount]
         if action.max_amount is not None:
             txns = [t for t in txns if t["amount"] <= action.max_amount]
-
         return txns, None
 
-    def _handle_lookup(
-        self, action: VeritasAction
-    ) -> tuple[Optional[Dict], Optional[str]]:
-        """Handle lookup_account action."""
+    def _handle_lookup(self, action):
         if not action.account_id:
             return None, "account_id is required for lookup_account."
-
         acc_id = action.account_id
         if acc_id not in self._scenario["accounts"]:
             return None, f"Account '{acc_id}' not found in this case."
-
         return self._scenario["accounts"][acc_id], None
 
-    def _handle_flag(
-        self, action: VeritasAction
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Handle flag_account action."""
+    def _handle_flag(self, action):
         if not action.account_id:
             return None, "account_id is required for flag_account."
-
         acc_id = action.account_id
         if acc_id not in self._scenario["accounts"]:
             return None, f"Account '{acc_id}' not found in this case."
-
         return f"Account {acc_id} flagged for review.", None
 
-    def _handle_report(
-        self, action: VeritasAction
-    ) -> tuple[Optional[str], Optional[str], float, float, str]:
-        """
-        Handle submit_report action.
-        Returns (action_result, action_error, reward, partial_score, feedback)
-        """
+    def _handle_report(self, action):
         if not action.primary_suspect:
             return (
                 None,
@@ -419,7 +365,6 @@ class VeritasEnvironment(Environment):
     # ─────────────────────────────────────────────────────
 
     def _is_suspicious(self, account_id: Optional[str]) -> bool:
-        """Check if account is part of the scheme (not an innocent)."""
         if not account_id or not self._scenario:
             return False
         return (
@@ -428,7 +373,6 @@ class VeritasEnvironment(Environment):
         )
 
     def _error_obs(self, message: str) -> VeritasObservation:
-        """Return a minimal error observation without crashing."""
         task_id = self._task_id or "task_easy"
         task    = TASKS.get(task_id, TASKS["task_easy"])
         return VeritasObservation(
@@ -449,7 +393,7 @@ class VeritasEnvironment(Environment):
             steps_taken       = self._step_count,
             max_steps         = task.max_steps,
         )
-    
+
     def close(self) -> None:
         """Clean up episode resources."""
         self._scenario = None
