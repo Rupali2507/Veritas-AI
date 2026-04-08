@@ -231,13 +231,13 @@ def _parse(text: str) -> Optional[Dict]:
 
 def run_task(task_id: str) -> Dict[str, Any]:
     task = TASKS[task_id]
-
-    log_start = f"[START]task={task_id}"
     rewards = []
 
     if not ENV_AVAILABLE or not MODELS_AVAILABLE:
         rewards.append(0.0)
-        print(f"{log_start}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
+        print(f"[START] task={task_id}", flush=True)
+        print(f"[STEP] step=1 reward=0.0", flush=True)
+        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
         return {"task_id": task_id, "difficulty": task.difficulty,
                 "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
@@ -246,7 +246,9 @@ def run_task(task_id: str) -> Dict[str, Any]:
         obs = env.reset()
     except Exception:
         rewards.append(0.0)
-        print(f"{log_start}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
+        print(f"[START] task={task_id}", flush=True)
+        print(f"[STEP] step=1 reward=0.0", flush=True)
+        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
         return {"task_id": task_id, "difficulty": task.difficulty,
                 "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
@@ -326,15 +328,10 @@ def run_task(task_id: str) -> Dict[str, Any]:
         step_count = len(rewards)
         solved = False
 
-    steps_str = ", ".join(
-        f"[STEP]step={i+1} reward={r}"
-        for i, r in enumerate(rewards)
-    )
-
-    print(
-        f"{log_start}, {steps_str}, [END]task={task_id} score={round(best_score,4)} steps={step_count}",
-        flush=True
-    )
+    print(f"[START] task={task_id}", flush=True)
+    for i, r in enumerate(rewards):
+        print(f"[STEP] step={i+1} reward={r}", flush=True)
+    print(f"[END] task={task_id} score={round(best_score,4)} steps={step_count}", flush=True)
 
     return {
         "task_id": task_id,
@@ -359,7 +356,9 @@ def main() -> None:
             result = run_task(task_id)
             results.append(result)
         except Exception:
-            print(f"[START]task={task_id}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
+            print(f"[START] task={task_id}", flush=True)
+            print(f"[STEP] step=1 reward=0.0", flush=True)
+            print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
             results.append({
                 "task_id": task_id,
                 "difficulty": TASKS[task_id].difficulty,
