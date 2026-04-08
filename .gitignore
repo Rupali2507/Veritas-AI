@@ -4,3 +4,4 @@ myenv/
 .env__pycache__/
 *.pyc
 uv.lock
+venv/
