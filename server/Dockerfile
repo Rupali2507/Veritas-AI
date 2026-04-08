@@ -7,7 +7,7 @@
 ARG BASE_IMAGE=ghcr.io/meta-pytorch/openenv-base:latest
 FROM ${BASE_IMAGE} AS builder
 
-WORKDIR /app
+WORKDIR /app/env
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \

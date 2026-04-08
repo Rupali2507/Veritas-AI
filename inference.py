@@ -223,44 +223,48 @@ def _parse(text: str) -> Optional[Dict]:
 # ──────────────────────────────────────────────────────────────────────────
 # TASK RUNNER
 # ──────────────────────────────────────────────────────────────────────────
+# ONLY showing modified parts — rest of your file remains SAME
+
+# ──────────────────────────────────────────────────────────────────────────
+# TASK RUNNER (UPDATED)
+# ──────────────────────────────────────────────────────────────────────────
 
 def run_task(task_id: str) -> Dict[str, Any]:
     task = TASKS[task_id]
 
-    # [START] is ALWAYS printed first — before anything can fail
-    print(f"[START] task={task_id}", flush=True)
+    log_start = f"[START]task={task_id}"
+    rewards = []
 
-    # If env or models not available, emit safe dummy output and return
     if not ENV_AVAILABLE or not MODELS_AVAILABLE:
-        print(f"[STEP] step=1 reward=0.0", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        rewards.append(0.0)
+        print(f"{log_start}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
         return {"task_id": task_id, "difficulty": task.difficulty,
-                "best_score": 0.0, "solved": False, "steps": 1}
+                "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
     try:
         env = VeritasEnvironment(task_id=task_id)
         obs = env.reset()
     except Exception:
-        print(f"[STEP] step=1 reward=0.0", flush=True)
-        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        rewards.append(0.0)
+        print(f"{log_start}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
         return {"task_id": task_id, "difficulty": task.difficulty,
-                "best_score": 0.0, "solved": False, "steps": 1}
+                "best_score": 0.0, "solved": False, "steps": 1, "rewards": rewards}
 
     def _obs_to_dict(o):
         return {
-            "initial_alerts":    o.initial_alerts,
+            "initial_alerts": o.initial_alerts,
             "accounts_in_scope": o.accounts_in_scope,
-            "flagged_accounts":  o.flagged_accounts,
-            "action_result":     o.action_result,
-            "action_error":      o.action_error,
-            "partial_score":     o.partial_score,
-            "steps_taken":       o.steps_taken,
-            "max_steps":         o.max_steps,
-            "done":              o.done,
+            "flagged_accounts": o.flagged_accounts,
+            "action_result": o.action_result,
+            "action_error": o.action_error,
+            "partial_score": o.partial_score,
+            "steps_taken": o.steps_taken,
+            "max_steps": o.max_steps,
+            "done": o.done,
         }
 
-    obs_dict   = _obs_to_dict(obs)
-    fallback   = _rule_actions(obs_dict)
+    obs_dict = _obs_to_dict(obs)
+    fallback = _rule_actions(obs_dict)
     best_score = 0.0
 
     for step in range(1, MAX_STEPS + 1):
@@ -271,7 +275,7 @@ def run_task(task_id: str) -> Dict[str, Any]:
         if LLM_AVAILABLE and step <= 6:
             msgs = [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": _build_prompt(obs_dict, step)},
+                {"role": "user", "content": _build_prompt(obs_dict, step)},
             ]
             action_dict = _parse(_call_llm(msgs))
 
@@ -282,26 +286,29 @@ def run_task(task_id: str) -> Dict[str, Any]:
 
         try:
             action = VeritasAction(**clean)
-            obs    = env.step(action)
+            obs = env.step(action)
         except Exception:
-            alert   = (obs_dict.get("initial_alerts") or [{}])[0]
+            alert = (obs_dict.get("initial_alerts") or [{}])[0]
             suspect = alert.get("account_id", "")
-            atype   = alert.get("alert_type", "velocity_anomaly")
-            ct      = CASE_TYPE_MAP.get(atype, "card_scheme")
-            accts   = obs_dict.get("accounts_in_scope", [])
-            assoc   = [a for a in accts if a != suspect] if ct != "card_scheme" else []
+            atype = alert.get("alert_type", "velocity_anomaly")
+            ct = CASE_TYPE_MAP.get(atype, "card_scheme")
+            accts = obs_dict.get("accounts_in_scope", [])
+            assoc = [a for a in accts if a != suspect] if ct != "card_scheme" else []
             try:
                 obs = env.step(VeritasAction(
                     action_type="submit_report",
-                    primary_suspect=suspect, associates=assoc,
-                    case_type=ct, evidence_summary=EVIDENCE_TEXT,
+                    primary_suspect=suspect,
+                    associates=assoc,
+                    case_type=ct,
+                    evidence_summary=EVIDENCE_TEXT,
                 ))
             except Exception:
-                print(f"[STEP] step={step} reward=0.0", flush=True)
+                rewards.append(0.0)
                 break
 
         reward = float(getattr(obs, "reward", 0.0) or 0.0)
-        print(f"[STEP] step={step} reward={reward}", flush=True)
+        rewards.append(reward)
+
         obs_dict = _obs_to_dict(obs)
 
         ps = float(getattr(obs, "partial_score", 0.0) or 0.0)
@@ -312,26 +319,35 @@ def run_task(task_id: str) -> Dict[str, Any]:
             break
 
     try:
-        state      = env.state
+        state = env.state
         step_count = int(state.step_count)
-        solved     = bool(state.solved)
+        solved = bool(state.solved)
     except Exception:
-        step_count = MAX_STEPS
-        solved     = False
+        step_count = len(rewards)
+        solved = False
 
-    print(f"[END] task={task_id} score={best_score} steps={step_count}", flush=True)
+    steps_str = ", ".join(
+        f"[STEP]step={i+1} reward={r}"
+        for i, r in enumerate(rewards)
+    )
+
+    print(
+        f"{log_start}, {steps_str}, [END]task={task_id} score={round(best_score,4)} steps={step_count}",
+        flush=True
+    )
 
     return {
-        "task_id":    task_id,
+        "task_id": task_id,
         "difficulty": task.difficulty,
         "best_score": round(best_score, 4),
-        "solved":     solved,
-        "steps":      step_count,
+        "solved": solved,
+        "steps": step_count,
+        "rewards": rewards,
     }
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# MAIN
+# MAIN (FIXED — NO DUPLICATE PRINTING)
 # ──────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -340,22 +356,21 @@ def main() -> None:
 
     for task_id in TASK_ORDER:
         try:
-            results.append(run_task(task_id))
+            result = run_task(task_id)
+            results.append(result)
         except Exception:
-            print(f"[START] task={task_id}", flush=True)
-            print(f"[STEP] step=1 reward=0.0", flush=True)
-            print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+            print(f"[START]task={task_id}, [STEP]step=1 reward=0.0, [END]task={task_id} score=0.0 steps=1", flush=True)
             results.append({
-                "task_id":    task_id,
+                "task_id": task_id,
                 "difficulty": TASKS[task_id].difficulty,
                 "best_score": 0.0,
-                "solved":     False,
-                "steps":      1,
+                "solved": False,
+                "steps": 1,
             })
 
     avg = sum(r["best_score"] for r in results) / max(len(results), 1)
-    rt  = round(time.time() - t0, 1)
-
+    rt = round(time.time() - t0, 1)
+    
     # print("JSON_RESULTS:", json.dumps({
     #     "model":     MODEL_NAME,
     #     "scores":    results,
