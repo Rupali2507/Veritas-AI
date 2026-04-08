@@ -5,3 +5,4 @@ myenv/
 *.pyc
 uv.lock
 venv/
+venv/
