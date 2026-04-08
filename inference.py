@@ -21,25 +21,64 @@ import time
 import textwrap
 from typing import Any, Dict, List, Optional
 
-# ── Path setup ─────────────────────────────────────────────────────────────
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# ── Path setup — MUST be before all local imports ──────────────────────────
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)
 
-# ── Local imports ──────────────────────────────────────────────────────────
-from veritas_env.environment import VeritasEnvironment
-from veritas_env.tasks import TASK_ORDER, TASKS
-from models import VeritasAction
+# ── Hardcoded task definitions (always available, no import needed) ─────────
+from dataclasses import dataclass, field as _field
+
+@dataclass
+class _Task:
+    task_id: str
+    difficulty: str
+    description: str = ""
+    max_steps: int = 10
+    case_type: str = "card_scheme"
+    hints: list = _field(default_factory=list)
+
+TASKS = {
+    "task_easy":   _Task("task_easy",   "easy",   max_steps=8,  case_type="card_scheme"),
+    "task_medium": _Task("task_medium", "medium", max_steps=12, case_type="layering_scheme"),
+    "task_hard":   _Task("task_hard",   "hard",   max_steps=18, case_type="coordinated_scheme"),
+}
+TASK_ORDER = ["task_easy", "task_medium", "task_hard"]
+
+# ── Try to import real tasks (overrides hardcoded if it works) ─────────────
+try:
+    from veritas_env.tasks import TASK_ORDER, TASKS  # noqa: F811
+except Exception:
+    pass  # keep hardcoded fallback
+
+# ── Try to import environment ──────────────────────────────────────────────
+ENV_AVAILABLE = False
+try:
+    from veritas_env.environment import VeritasEnvironment
+    ENV_AVAILABLE = True
+except Exception:
+    pass
+
+# ── Try to import VeritasAction ────────────────────────────────────────────
+MODELS_AVAILABLE = False
+try:
+    from models import VeritasAction
+    MODELS_AVAILABLE = True
+except Exception:
+    pass
 
 # ── Credentials ────────────────────────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 API_KEY      = os.getenv("HF_TOKEN", "dummy-key")
-MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
-LLM_TIMEOUT  = 20    # hard socket timeout per LLM call (seconds)
+LLM_TIMEOUT  = 20
 MAX_STEPS    = 10
 TEMPERATURE  = 0.1
 MAX_TOKENS   = 512
 
 # ── OpenAI client ──────────────────────────────────────────────────────────
+LLM_AVAILABLE = False
+_client = None
 try:
     from openai import OpenAI
     _client = OpenAI(
@@ -50,17 +89,16 @@ try:
     )
     LLM_AVAILABLE = True
 except Exception:
-    _client = None
-    LLM_AVAILABLE = False
+    pass
 
 # ──────────────────────────────────────────────────────────────────────────
-# ALERT-TYPE → CASE-TYPE MAP
+# CONSTANTS
 # ──────────────────────────────────────────────────────────────────────────
 
 CASE_TYPE_MAP = {
-    "velocity_anomaly":    "card_scheme",
-    "structuring_pattern": "layering_scheme",
-    "coordinated_activity":"coordinated_scheme",
+    "velocity_anomaly":     "card_scheme",
+    "structuring_pattern":  "layering_scheme",
+    "coordinated_activity": "coordinated_scheme",
 }
 
 EVIDENCE_TEXT = (
@@ -69,8 +107,14 @@ EVIDENCE_TEXT = (
     "accounts, layering chain of peer transfers"
 )
 
+VALID_FIELDS = {
+    "action_type", "account_id", "date_from", "date_to",
+    "min_amount", "max_amount", "reason", "primary_suspect",
+    "associates", "case_type", "evidence_summary",
+}
+
 # ──────────────────────────────────────────────────────────────────────────
-# RULE-BASED FALLBACK  (zero LLM — always works)
+# RULE-BASED FALLBACK
 # ──────────────────────────────────────────────────────────────────────────
 
 def _rule_actions(obs_dict: Dict) -> List[Dict]:
@@ -83,14 +127,14 @@ def _rule_actions(obs_dict: Dict) -> List[Dict]:
     assoc     = [a for a in accounts if a != suspect] if case_type != "card_scheme" else []
 
     return [
-        {"action_type": "lookup_account",    "account_id": suspect},
+        {"action_type": "lookup_account",     "account_id": suspect},
         {"action_type": "query_transactions", "account_id": suspect},
         {"action_type": "flag_account",       "account_id": suspect,
          "reason": "primary alert account with suspicious activity"},
         {"action_type": "submit_report",
-         "primary_suspect": suspect,
-         "associates":      assoc,
-         "case_type":       case_type,
+         "primary_suspect":  suspect,
+         "associates":       assoc,
+         "case_type":        case_type,
          "evidence_summary": EVIDENCE_TEXT},
     ]
 
@@ -114,13 +158,13 @@ SYSTEM_PROMPT = textwrap.dedent("""
 
 
 def _build_prompt(obs_dict: Dict, step: int) -> str:
-    alert     = (obs_dict.get("initial_alerts") or [{}])[0]
-    suspect   = alert.get("account_id", "")
-    atype     = alert.get("alert_type", "")
-    accounts  = obs_dict.get("accounts_in_scope", [])
-    case_type = CASE_TYPE_MAP.get(atype, "card_scheme")
+    alert      = (obs_dict.get("initial_alerts") or [{}])[0]
+    suspect    = alert.get("account_id", "")
+    atype      = alert.get("alert_type", "")
+    accounts   = obs_dict.get("accounts_in_scope", [])
+    case_type  = CASE_TYPE_MAP.get(atype, "card_scheme")
     steps_left = obs_dict.get("max_steps", 10) - obs_dict.get("steps_taken", 0)
-    assoc = [a for a in accounts if a != suspect] if case_type != "card_scheme" else []
+    assoc      = [a for a in accounts if a != suspect] if case_type != "card_scheme" else []
 
     last = ""
     if obs_dict.get("action_result") is not None:
@@ -166,7 +210,8 @@ def _parse(text: str) -> Optional[Dict]:
         for part in text.split("```"):
             part = part.strip().lstrip("json").strip()
             if part.startswith("{"):
-                text = part; break
+                text = part
+                break
     s, e = text.find("{"), text.rfind("}") + 1
     if s == -1 or e == 0:
         return None
@@ -179,16 +224,18 @@ def _parse(text: str) -> Optional[Dict]:
 # TASK RUNNER
 # ──────────────────────────────────────────────────────────────────────────
 
-VALID_FIELDS = {
-    "action_type","account_id","date_from","date_to",
-    "min_amount","max_amount","reason","primary_suspect",
-    "associates","case_type","evidence_summary",
-}
-
-
 def run_task(task_id: str) -> Dict[str, Any]:
     task = TASKS[task_id]
+
+    # [START] is ALWAYS printed first — before anything can fail
     print(f"[START] task={task_id}", flush=True)
+
+    # If env or models not available, emit safe dummy output and return
+    if not ENV_AVAILABLE or not MODELS_AVAILABLE:
+        print(f"[STEP] step=1 reward=0.0", flush=True)
+        print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
+        return {"task_id": task_id, "difficulty": task.difficulty,
+                "best_score": 0.0, "solved": False, "steps": 1}
 
     try:
         env = VeritasEnvironment(task_id=task_id)
@@ -201,15 +248,15 @@ def run_task(task_id: str) -> Dict[str, Any]:
 
     def _obs_to_dict(o):
         return {
-            "initial_alerts":   o.initial_alerts,
-            "accounts_in_scope":o.accounts_in_scope,
-            "flagged_accounts": o.flagged_accounts,
-            "action_result":    o.action_result,
-            "action_error":     o.action_error,
-            "partial_score":    o.partial_score,
-            "steps_taken":      o.steps_taken,
-            "max_steps":        o.max_steps,
-            "done":             o.done,
+            "initial_alerts":    o.initial_alerts,
+            "accounts_in_scope": o.accounts_in_scope,
+            "flagged_accounts":  o.flagged_accounts,
+            "action_result":     o.action_result,
+            "action_error":      o.action_error,
+            "partial_score":     o.partial_score,
+            "steps_taken":       o.steps_taken,
+            "max_steps":         o.max_steps,
+            "done":              o.done,
         }
 
     obs_dict   = _obs_to_dict(obs)
@@ -220,7 +267,6 @@ def run_task(task_id: str) -> Dict[str, Any]:
         if obs_dict.get("done"):
             break
 
-        # Try LLM, then fallback
         action_dict = None
         if LLM_AVAILABLE and step <= 6:
             msgs = [
@@ -238,7 +284,6 @@ def run_task(task_id: str) -> Dict[str, Any]:
             action = VeritasAction(**clean)
             obs    = env.step(action)
         except Exception:
-            # Emergency submit
             alert   = (obs_dict.get("initial_alerts") or [{}])[0]
             suspect = alert.get("account_id", "")
             atype   = alert.get("alert_type", "velocity_anomaly")
@@ -255,27 +300,34 @@ def run_task(task_id: str) -> Dict[str, Any]:
                 print(f"[STEP] step={step} reward=0.0", flush=True)
                 break
 
-        reward = float(obs.reward or 0.0)
+        reward = float(getattr(obs, "reward", 0.0) or 0.0)
         print(f"[STEP] step={step} reward={reward}", flush=True)
         obs_dict = _obs_to_dict(obs)
 
-        if obs.partial_score > best_score:
-            best_score = obs.partial_score
+        ps = float(getattr(obs, "partial_score", 0.0) or 0.0)
+        if ps > best_score:
+            best_score = ps
+
         if obs_dict.get("done"):
             break
 
     try:
-        state = env.state
-        step_count, solved = int(state.step_count), state.solved
+        state      = env.state
+        step_count = int(state.step_count)
+        solved     = bool(state.solved)
     except Exception:
-        step_count, solved = MAX_STEPS, False
+        step_count = MAX_STEPS
+        solved     = False
 
-    print(f"[END] task={task_id} score={best_score} steps={step_count}",
-          flush=True)
+    print(f"[END] task={task_id} score={best_score} steps={step_count}", flush=True)
 
-    return {"task_id": task_id, "difficulty": task.difficulty,
-            "best_score": round(best_score, 4), "solved": solved,
-            "steps": step_count}
+    return {
+        "task_id":    task_id,
+        "difficulty": task.difficulty,
+        "best_score": round(best_score, 4),
+        "solved":     solved,
+        "steps":      step_count,
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -293,17 +345,23 @@ def main() -> None:
             print(f"[START] task={task_id}", flush=True)
             print(f"[STEP] step=1 reward=0.0", flush=True)
             print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-            results.append({"task_id": task_id,
-                            "difficulty": TASKS[task_id].difficulty,
-                            "best_score": 0.0, "solved": False, "steps": 1})
+            results.append({
+                "task_id":    task_id,
+                "difficulty": TASKS[task_id].difficulty,
+                "best_score": 0.0,
+                "solved":     False,
+                "steps":      1,
+            })
 
-    avg  = sum(r["best_score"] for r in results) / len(results)
-    rt   = round(time.time() - t0, 1)
-    print(f"Average score: {avg:.4f}  Runtime: {rt}s", flush=True)
-    print("JSON_RESULTS:", json.dumps(
-        {"model": MODEL_NAME, "scores": results,
-         "avg_score": round(avg, 4), "runtime_s": rt}
-    ), flush=True)
+    avg = sum(r["best_score"] for r in results) / max(len(results), 1)
+    rt  = round(time.time() - t0, 1)
+
+    # print("JSON_RESULTS:", json.dumps({
+    #     "model":     MODEL_NAME,
+    #     "scores":    results,
+    #     "avg_score": round(avg, 4),
+    #     "runtime_s": rt,
+    # }), flush=True)
 
 
 if __name__ == "__main__":
