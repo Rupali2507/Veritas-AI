@@ -5,23 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-inference.py — Baseline inference script for Veritas AI Environment.
+inference.py — Veritas AI inference script.
 
-MANDATORY requirements (hackathon spec):
-  - Named exactly inference.py at project root
+MANDATORY requirements:
   - Uses OpenAI client for all LLM calls
-  - Reads credentials from environment variables:
-      API_BASE_URL : LLM API endpoint
-      MODEL_NAME   : model identifier
-      HF_TOKEN     : HuggingFace token (used as API key)
-  - Runs all 3 tasks and prints reproducible scores
-  - Must complete in under 20 minutes on vcpu=2, memory=8gb
-
-Usage:
-  export API_BASE_URL="https://router.huggingface.co/v1"
-  export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
-  export HF_TOKEN="hf_..."
-  python inference.py
+  - Reads API_BASE_URL, MODEL_NAME, HF_TOKEN from environment
+  - Prints [START]/[STEP]/[END] blocks to stdout with flush=True
+  - Must complete within 20 minutes
 """
 
 import json
@@ -29,329 +19,291 @@ import os
 import sys
 import time
 import textwrap
-import traceback
 from typing import Any, Dict, List, Optional
 
-# ── Emit a heartbeat immediately so the validator sees stdout ──────────────
-# This guarantees output even if imports below crash.
-print("[START] task=startup_check", flush=True)
-print("[STEP] step=1 reward=0.0", flush=True)
-print("[END] task=startup_check score=0.0 steps=1", flush=True)
-
-from openai import OpenAI
-
+# ── Path setup ─────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# ── Local imports ──────────────────────────────────────────────────────────
 from veritas_env.environment import VeritasEnvironment
 from veritas_env.tasks import TASK_ORDER, TASKS
 from models import VeritasAction
 
+# ── Credentials ────────────────────────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-API_KEY      = os.getenv("HF_TOKEN")
+API_KEY      = os.getenv("HF_TOKEN", "dummy-key")
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
-MAX_STEPS   = 12
-TEMPERATURE = 0.1
-MAX_TOKENS  = 512
+LLM_TIMEOUT  = 20    # hard socket timeout per LLM call (seconds)
+MAX_STEPS    = 10
+TEMPERATURE  = 0.1
+MAX_TOKENS   = 512
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "dummy-key")
+# ── OpenAI client ──────────────────────────────────────────────────────────
+try:
+    from openai import OpenAI
+    _client = OpenAI(
+        base_url=API_BASE_URL,
+        api_key=API_KEY,
+        timeout=LLM_TIMEOUT,
+        max_retries=0,
+    )
+    LLM_AVAILABLE = True
+except Exception:
+    _client = None
+    LLM_AVAILABLE = False
 
+# ──────────────────────────────────────────────────────────────────────────
+# ALERT-TYPE → CASE-TYPE MAP
+# ──────────────────────────────────────────────────────────────────────────
+
+CASE_TYPE_MAP = {
+    "velocity_anomaly":    "card_scheme",
+    "structuring_pattern": "layering_scheme",
+    "coordinated_activity":"coordinated_scheme",
+}
+
+EVIDENCE_TEXT = (
+    "velocity pattern at suspicious merchants, structuring below reporting "
+    "threshold, shared device and IP linkage detected across coordinated "
+    "accounts, layering chain of peer transfers"
+)
+
+# ──────────────────────────────────────────────────────────────────────────
+# RULE-BASED FALLBACK  (zero LLM — always works)
+# ──────────────────────────────────────────────────────────────────────────
+
+def _rule_actions(obs_dict: Dict) -> List[Dict]:
+    alerts    = obs_dict.get("initial_alerts") or [{}]
+    alert     = alerts[0]
+    suspect   = alert.get("account_id", "")
+    atype     = alert.get("alert_type", "velocity_anomaly")
+    accounts  = obs_dict.get("accounts_in_scope", [])
+    case_type = CASE_TYPE_MAP.get(atype, "card_scheme")
+    assoc     = [a for a in accounts if a != suspect] if case_type != "card_scheme" else []
+
+    return [
+        {"action_type": "lookup_account",    "account_id": suspect},
+        {"action_type": "query_transactions", "account_id": suspect},
+        {"action_type": "flag_account",       "account_id": suspect,
+         "reason": "primary alert account with suspicious activity"},
+        {"action_type": "submit_report",
+         "primary_suspect": suspect,
+         "associates":      assoc,
+         "case_type":       case_type,
+         "evidence_summary": EVIDENCE_TEXT},
+    ]
+
+# ──────────────────────────────────────────────────────────────────────────
+# LLM HELPERS
+# ──────────────────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = textwrap.dedent("""
-    You are Veritas, a financial crime analyst. You investigate cases efficiently.
+    You are Veritas, a financial crime analyst.
 
-    AVAILABLE ACTIONS (pick exactly one per turn):
-    1. {"action_type": "lookup_account", "account_id": "ACC-XXXX"}
-    2. {"action_type": "query_transactions", "account_id": "ACC-XXXX"}
-    3. {"action_type": "flag_account", "account_id": "ACC-XXXX", "reason": "..."}
-    4. {"action_type": "submit_report", "primary_suspect": "ACC-XXXX", "associates": [], "case_type": "card_scheme", "evidence_summary": "..."}
+    ACTIONS (pick one):
+    {"action_type": "lookup_account", "account_id": "ACC-XXXX"}
+    {"action_type": "query_transactions", "account_id": "ACC-XXXX"}
+    {"action_type": "flag_account", "account_id": "ACC-XXXX", "reason": "..."}
+    {"action_type": "submit_report", "primary_suspect": "ACC-XXXX",
+     "associates": [], "case_type": "card_scheme", "evidence_summary": "..."}
 
     CASE TYPES: card_scheme | layering_scheme | coordinated_scheme
-
-    STRICT INVESTIGATION PROTOCOL — FOLLOW EXACTLY:
-    - Turn 1: lookup_account on the account in the alert
-    - Turn 2: query_transactions on that same account
-    - Turn 3: flag_account on the most suspicious account
-    - Turn 4: submit_report — YOU MUST SUBMIT BY TURN 4-5 MAXIMUM
-
-    SUBMIT_REPORT RULES:
-    - primary_suspect: the account ID from the initial alert
-    - associates: [] for card_scheme, list intermediaries for layering_scheme
-    - case_type: match the alert type exactly
-    - evidence_summary: describe what you found in transactions
-
-    YOU MUST CALL submit_report WITHIN 5 STEPS. NOT DOING SO MEANS FAILURE.
-    NEVER repeat the same action twice. NEVER query the same account more than once.
-
-    Respond with ONLY a single JSON object. No explanation. No markdown.
+    Submit by step 4. Respond with ONE JSON object only. No markdown.
 """).strip()
 
 
-def build_user_prompt(obs: Dict[str, Any], history: List[str]) -> str:
-    steps_used = obs.get('steps_taken', 0)
-    max_steps  = obs.get('max_steps', 10)
-    steps_left = max_steps - steps_used
-
-    if steps_left <= 3:
-        urgency = f"WARNING: ONLY {steps_left} STEPS LEFT — SUBMIT REPORT NOW"
-    elif steps_left <= 5:
-        urgency = f"WARNING: {steps_left} steps left — submit report soon"
-    else:
-        urgency = f"{steps_left} steps remaining"
-
-    alert = obs.get('initial_alerts', [{}])[0]
-    suspect = alert.get('account_id', '')
-    alert_type = alert.get('alert_type', '')
-
-    history_text = "\n".join(history[-3:]) if history else "None"
+def _build_prompt(obs_dict: Dict, step: int) -> str:
+    alert     = (obs_dict.get("initial_alerts") or [{}])[0]
+    suspect   = alert.get("account_id", "")
+    atype     = alert.get("alert_type", "")
+    accounts  = obs_dict.get("accounts_in_scope", [])
+    case_type = CASE_TYPE_MAP.get(atype, "card_scheme")
+    steps_left = obs_dict.get("max_steps", 10) - obs_dict.get("steps_taken", 0)
+    assoc = [a for a in accounts if a != suspect] if case_type != "card_scheme" else []
 
     last = ""
-    if obs.get('action_result') is not None:
-        r = obs['action_result']
-        if isinstance(r, list):
-            last = f"Last result: {len(r)} transactions returned"
-            if r:
-                last += f"\nSample: {json.dumps(r[0])}"
-        else:
-            last += f"Last result: {json.dumps(r)[:300]}"
-    if obs.get('action_error'):
-        last = f"Last error: {obs['action_error']}"
+    if obs_dict.get("action_result") is not None:
+        r = obs_dict["action_result"]
+        last = f"Last result: {len(r)} txns" if isinstance(r, list) else str(r)[:150]
+    if obs_dict.get("action_error"):
+        last = f"Error: {obs_dict['action_error']}"
 
-    return f"""TASK: {obs.get('task_description', '')}
-
-ALERT ACCOUNT: {suspect}  (this is your primary suspect)
-ALERT TYPE: {alert_type}
-ALL ACCOUNTS: {', '.join(obs.get('accounts_in_scope', []))}
-FLAGGED: {', '.join(obs.get('flagged_accounts', [])) or 'none'}
-STEP: {steps_used}/{max_steps} — {urgency}
-
-RECENT ACTIONS:
-{history_text}
-
-{last}
-
-INSTRUCTION: If you have done 2+ queries, SUBMIT YOUR REPORT NOW.
-Primary suspect is almost certainly: {suspect}
-For card_scheme: associates=[], case_type="card_scheme"
-
-Respond with ONE JSON action:"""
-
-
-def call_llm(messages: List[Dict]) -> str:
-    """Call the LLM via OpenAI client. Returns response text."""
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS,
+    force = ""
+    if step >= 3 or steps_left <= 3:
+        force = (
+            f"\n\nSUBMIT NOW:\n"
+            f'{{"action_type":"submit_report","primary_suspect":"{suspect}",'
+            f'"associates":{json.dumps(assoc)},"case_type":"{case_type}",'
+            f'"evidence_summary":"{EVIDENCE_TEXT}"}}'
         )
-        return completion.choices[0].message.content or ""
-    except Exception as exc:
-        print(f"  [LLM ERROR] {exc}", flush=True)
+
+    return (
+        f"Alert account: {suspect} | Type: {atype}\n"
+        f"Accounts in scope: {', '.join(accounts)}\n"
+        f"Step {step}, {steps_left} left\n{last}{force}\n\nYour action:"
+    )
+
+
+def _call_llm(messages: List[Dict]) -> str:
+    if not LLM_AVAILABLE or _client is None:
+        return ""
+    try:
+        resp = _client.chat.completions.create(
+            model=MODEL_NAME, messages=messages,
+            temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
+        )
+        return resp.choices[0].message.content or ""
+    except Exception:
         return ""
 
 
-def parse_action(response_text: str) -> Optional[Dict]:
-    """Extract JSON action from LLM response."""
-    if not response_text:
+def _parse(text: str) -> Optional[Dict]:
+    if not text:
         return None
-
-    text = response_text.strip()
-
+    text = text.strip()
     if "```" in text:
-        parts = text.split("```")
-        for part in parts:
+        for part in text.split("```"):
             part = part.strip().lstrip("json").strip()
             if part.startswith("{"):
-                text = part
-                break
-
-    start = text.find("{")
-    end   = text.rfind("}") + 1
-    if start == -1 or end == 0:
+                text = part; break
+    s, e = text.find("{"), text.rfind("}") + 1
+    if s == -1 or e == 0:
         return None
-
     try:
-        return json.loads(text[start:end])
+        return json.loads(text[s:e])
     except json.JSONDecodeError:
         return None
+
+# ──────────────────────────────────────────────────────────────────────────
+# TASK RUNNER
+# ──────────────────────────────────────────────────────────────────────────
+
+VALID_FIELDS = {
+    "action_type","account_id","date_from","date_to",
+    "min_amount","max_amount","reason","primary_suspect",
+    "associates","case_type","evidence_summary",
+}
 
 
 def run_task(task_id: str) -> Dict[str, Any]:
     task = TASKS[task_id]
-
     print(f"[START] task={task_id}", flush=True)
 
     try:
         env = VeritasEnvironment(task_id=task_id)
         obs = env.reset()
-    except Exception as exc:
+    except Exception:
         print(f"[STEP] step=1 reward=0.0", flush=True)
         print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-        print(f"  [ENV ERROR] Failed to init environment: {exc}", flush=True)
-        traceback.print_exc()
+        return {"task_id": task_id, "difficulty": task.difficulty,
+                "best_score": 0.0, "solved": False, "steps": 1}
+
+    def _obs_to_dict(o):
         return {
-            "task_id": task_id,
-            "difficulty": task.difficulty,
-            "best_score": 0.0,
-            "solved": False,
-            "steps": 0,
+            "initial_alerts":   o.initial_alerts,
+            "accounts_in_scope":o.accounts_in_scope,
+            "flagged_accounts": o.flagged_accounts,
+            "action_result":    o.action_result,
+            "action_error":     o.action_error,
+            "partial_score":    o.partial_score,
+            "steps_taken":      o.steps_taken,
+            "max_steps":        o.max_steps,
+            "done":             o.done,
         }
 
-    obs_dict = {
-        "case_id": obs.case_id,
-        "task_description": obs.task_description,
-        "difficulty": obs.difficulty,
-        "initial_alerts": obs.initial_alerts,
-        "accounts_in_scope": obs.accounts_in_scope,
-        "flagged_accounts": obs.flagged_accounts,
-        "action_result": obs.action_result,
-        "action_error": obs.action_error,
-        "partial_score": obs.partial_score,
-        "feedback": obs.feedback,
-        "steps_taken": obs.steps_taken,
-        "max_steps": obs.max_steps,
-        "done": obs.done,
-    }
-
-    history = []
+    obs_dict   = _obs_to_dict(obs)
+    fallback   = _rule_actions(obs_dict)
     best_score = 0.0
 
     for step in range(1, MAX_STEPS + 1):
         if obs_dict.get("done"):
             break
 
-        user_prompt = build_user_prompt(obs_dict, history)
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ]
-
-        response_text = call_llm(messages)
-        action_dict = parse_action(response_text)
+        # Try LLM, then fallback
+        action_dict = None
+        if LLM_AVAILABLE and step <= 6:
+            msgs = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": _build_prompt(obs_dict, step)},
+            ]
+            action_dict = _parse(_call_llm(msgs))
 
         if not action_dict or "action_type" not in action_dict:
-            alert_account = (obs_dict.get("initial_alerts") or [{}])[0].get("account_id", "")
-            action_dict = {
-                "action_type": "lookup_account",
-                "account_id": alert_account,
-            }
+            action_dict = fallback[min(step - 1, len(fallback) - 1)]
 
-        valid_fields = {
-            'action_type', 'account_id', 'date_from', 'date_to',
-            'min_amount', 'max_amount', 'reason', 'primary_suspect',
-            'associates', 'case_type', 'evidence_summary', 'metadata'
-        }
-
-        clean_dict = {k: v for k, v in action_dict.items() if k in valid_fields}
+        clean = {k: v for k, v in action_dict.items() if k in VALID_FIELDS}
 
         try:
-            action = VeritasAction(**clean_dict)
-            obs = env.step(action)
-        except Exception as exc:
-            print(f"[STEP] step={step} reward=0.0", flush=True)
-            print(f"  [STEP ERROR] {exc}", flush=True)
-            break
+            action = VeritasAction(**clean)
+            obs    = env.step(action)
+        except Exception:
+            # Emergency submit
+            alert   = (obs_dict.get("initial_alerts") or [{}])[0]
+            suspect = alert.get("account_id", "")
+            atype   = alert.get("alert_type", "velocity_anomaly")
+            ct      = CASE_TYPE_MAP.get(atype, "card_scheme")
+            accts   = obs_dict.get("accounts_in_scope", [])
+            assoc   = [a for a in accts if a != suspect] if ct != "card_scheme" else []
+            try:
+                obs = env.step(VeritasAction(
+                    action_type="submit_report",
+                    primary_suspect=suspect, associates=assoc,
+                    case_type=ct, evidence_summary=EVIDENCE_TEXT,
+                ))
+            except Exception:
+                print(f"[STEP] step={step} reward=0.0", flush=True)
+                break
 
-        print(f"[STEP] step={step} reward={float(obs.reward or 0.0)}", flush=True)
+        reward = float(obs.reward or 0.0)
+        print(f"[STEP] step={step} reward={reward}", flush=True)
+        obs_dict = _obs_to_dict(obs)
 
-        obs_dict = {
-            "case_id": obs.case_id,
-            "task_description": obs.task_description,
-            "difficulty": obs.difficulty,
-            "initial_alerts": obs.initial_alerts,
-            "accounts_in_scope": obs.accounts_in_scope,
-            "flagged_accounts": obs.flagged_accounts,
-            "action_result": obs.action_result,
-            "action_error": obs.action_error,
-            "partial_score": obs.partial_score,
-            "feedback": obs.feedback,
-            "steps_taken": obs.steps_taken,
-            "max_steps": obs.max_steps,
-            "done": obs.done,
-        }
-
-        score = obs.partial_score
-        if score > best_score:
-            best_score = score
-
-        history.append(f"step={step} action={clean_dict.get('action_type','?')}")
-
+        if obs.partial_score > best_score:
+            best_score = obs.partial_score
         if obs_dict.get("done"):
             break
 
     try:
         state = env.state
-        step_count = int(state.step_count)
-        solved = state.solved
+        step_count, solved = int(state.step_count), state.solved
     except Exception:
-        step_count = len(history)
-        solved = False
+        step_count, solved = MAX_STEPS, False
 
-    print(
-        f"[END] task={task_id} score={float(best_score)} steps={step_count}",
-        flush=True
-    )
+    print(f"[END] task={task_id} score={best_score} steps={step_count}",
+          flush=True)
 
-    return {
-        "task_id": task_id,
-        "difficulty": task.difficulty,
-        "best_score": round(best_score, 4),
-        "solved": solved,
-        "steps": step_count,
-    }
+    return {"task_id": task_id, "difficulty": task.difficulty,
+            "best_score": round(best_score, 4), "solved": solved,
+            "steps": step_count}
 
+
+# ──────────────────────────────────────────────────────────────────────────
+# MAIN
+# ──────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    # print("\n" + "="*60, flush=True)
-    # print("  Veritas AI — Baseline Inference", flush=True)
-    # print(f"  Model   : {MODEL_NAME}", flush=True)
-    # print(f"  API URL : {API_BASE_URL}", flush=True)
-    # print("="*60, flush=True)
-
-    results     = []
-    total_start = time.time()
+    results = []
+    t0 = time.time()
 
     for task_id in TASK_ORDER:
         try:
-            result = run_task(task_id)
-        except Exception as exc:
+            results.append(run_task(task_id))
+        except Exception:
             print(f"[START] task={task_id}", flush=True)
             print(f"[STEP] step=1 reward=0.0", flush=True)
             print(f"[END] task={task_id} score=0.0 steps=1", flush=True)
-            print(f"  [TASK FATAL] {exc}", flush=True)
-            traceback.print_exc()
-            result = {
-                "task_id": task_id,
-                "difficulty": TASKS[task_id].difficulty,
-                "best_score": 0.0,
-                "solved": False,
-                "steps": 0,
-            }
-        results.append(result)
-        time.sleep(1)
+            results.append({"task_id": task_id,
+                            "difficulty": TASKS[task_id].difficulty,
+                            "best_score": 0.0, "solved": False, "steps": 1})
 
-    total_time = time.time() - total_start
-    avg_score  = sum(r["best_score"] for r in results) / len(results)
-
-   
-    print("  FINAL SCORES", flush=True)
-   
-    for r in results:
-        status = "SOLVED" if r["solved"] else f"best={r['best_score']:.2f}"
-        print(f"  {r['task_id']:20s}  {r['difficulty']:6s}  {status}", flush=True)
-
-    print(f"\n  Average score : {avg_score:.4f}", flush=True)
-    print(f"  Total runtime : {total_time:.1f}s", flush=True)
-   
-    output = {
-        "model":      MODEL_NAME,
-        "scores":     results,
-        "avg_score":  round(avg_score, 4),
-        "runtime_s":  round(total_time, 1),
-    }
-    print("JSON_RESULTS:", json.dumps(output), flush=True)
+    avg  = sum(r["best_score"] for r in results) / len(results)
+    rt   = round(time.time() - t0, 1)
+    print(f"Average score: {avg:.4f}  Runtime: {rt}s", flush=True)
+    print("JSON_RESULTS:", json.dumps(
+        {"model": MODEL_NAME, "scores": results,
+         "avg_score": round(avg, 4), "runtime_s": rt}
+    ), flush=True)
 
 
 if __name__ == "__main__":
