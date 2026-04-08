@@ -1,4 +1,6 @@
 venv/
 __pycache__/
 myenv/
-.env
+.env__pycache__/
+*.pyc
+uv.lock
