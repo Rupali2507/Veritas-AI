@@ -3,1129 +3,1280 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Veritas AI — Financial Crime Investigation</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Veritas AI — Case Solver</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #07090f;
-    --surface: #0d1117;
-    --card: #111822;
-    --border: #1e2d42;
-    --accent: #00d4ff;
-    --accent2: #ff4d6d;
-    --accent3: #39ff14;
-    --warn: #ffa500;
-    --text: #e0eaf8;
-    --muted: #5a7a99;
-    --font-display: 'Syne', sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-  }
+:root {
+  --bg: #0a0b0f;
+  --card: #12141a;
+  --card2: #1a1d26;
+  --border: #232736;
+  --gold: #f5c842;
+  --gold2: #e8a800;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --text: #f0f2ff;
+  --muted: #6b7280;
+  --step-inactive: #1a1d26;
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-mono);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* ── GRID NOISE BACKGROUND ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+/* ── NOISE OVERLAY ── */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:999;
+  opacity:0.35;
+}
 
-  /* ── HEADER ── */
-  header {
-    position: relative;
-    z-index: 10;
-    border-bottom: 1px solid var(--border);
-    padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: rgba(7,9,15,0.95);
-    backdrop-filter: blur(10px);
-  }
+/* ── HEADER ── */
+header {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:20px 32px;
+  border-bottom:1px solid var(--border);
+  background: rgba(10,11,15,0.95);
+  position:sticky; top:0; z-index:50;
+}
 
-  .logo-badge {
-    width: 44px; height: 44px;
-    background: linear-gradient(135deg, var(--accent), #0066ff);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 800; font-size: 18px;
-    color: #000;
-    flex-shrink: 0;
-    box-shadow: 0 0 20px rgba(0,212,255,0.4);
-  }
+.logo {
+  width:42px; height:42px;
+  background: var(--gold);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Bebas Neue';
+  font-size:22px;
+  color:#000;
+  flex-shrink:0;
+  box-shadow: 0 0 24px rgba(245,200,66,0.35);
+}
 
-  .brand {
-    flex: 1;
-  }
-  .brand h1 {
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #fff;
-  }
-  .brand p {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
+.brand-name {
+  font-family:'Bebas Neue';
+  font-size:26px;
+  letter-spacing:2px;
+  color:var(--gold);
+}
+.brand-sub {
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-top:1px;
+}
 
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent3);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(57,255,20,0.4); }
-    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(57,255,20,0); }
-  }
+.conn-badge {
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background: var(--card2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 14px;
+  font-size:12px;
+  font-family:'DM Mono';
+}
+.conn-dot {
+  width:8px; height:8px;
+  border-radius:50%;
+  background:var(--muted);
+  transition: background 0.3s;
+}
+.conn-dot.live { background:var(--green); box-shadow:0 0 8px var(--green); animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-  /* ── MAIN LAYOUT ── */
-  .app {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 320px 1fr 280px;
-    grid-template-rows: 1fr;
-    height: calc(100vh - 81px);
-    overflow: hidden;
-  }
+/* ── LAYOUT ── */
+.layout {
+  display:grid;
+  grid-template-columns: 340px 1fr;
+  gap:0;
+  height:calc(100vh - 83px);
+}
 
-  /* ── PANELS ── */
-  .panel {
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .panel:last-child { border-right: none; }
+/* ── LEFT SIDEBAR ── */
+.sidebar {
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
 
-  .panel-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(13,17,23,0.8);
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    flex-shrink: 0;
-  }
-  .panel-header h2 {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-  }
-  .panel-icon {
-    font-size: 15px;
-    opacity: 0.8;
-  }
+.sidebar-section {
+  border-bottom:1px solid var(--border);
+  padding:20px;
+}
 
-  .panel-body {
-    padding: 16px;
-    flex: 1;
-  }
+.section-label {
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.14em;
+  color:var(--muted);
+  margin-bottom:12px;
+  font-family:'DM Mono';
+}
 
-  /* ── CASE PANEL (left) ── */
-  #panel-case {}
+/* Server URL */
+.url-input {
+  width:100%;
+  background: var(--card2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  color:var(--text);
+  font-family:'DM Mono';
+  font-size:12px;
+  outline:none;
+  margin-bottom:10px;
+  transition:border-color 0.2s;
+}
+.url-input:focus { border-color:var(--gold); }
 
-  .task-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  .task-btn {
-    border: 1px solid var(--border);
-    background: var(--card);
-    color: var(--text);
-    padding: 10px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    transition: all 0.2s;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .task-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .task-btn.active {
-    border-color: var(--accent);
-    background: rgba(0,212,255,0.08);
-    color: var(--accent);
-    box-shadow: 0 0 12px rgba(0,212,255,0.15);
-  }
-  .difficulty-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 0.08em;
-  }
-  .diff-easy { background: rgba(57,255,20,0.15); color: var(--accent3); }
-  .diff-medium { background: rgba(255,165,0,0.15); color: var(--warn); }
-  .diff-hard { background: rgba(255,77,109,0.15); color: var(--accent2); }
+/* Difficulty pills */
+.diff-pills {
+  display:flex;
+  gap:6px;
+  margin-bottom:12px;
+}
+.diff-pill {
+  flex:1;
+  padding:8px 4px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  font-family:'DM Sans';
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+}
+.diff-pill:hover { border-color:var(--gold); color:var(--gold); }
+.diff-pill.active { background:rgba(245,200,66,0.12); border-color:var(--gold); color:var(--gold); }
 
-  .reset-btn {
-    width: 100%;
-    padding: 11px;
-    background: linear-gradient(135deg, var(--accent), #0066ff);
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-  }
-  .reset-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,255,0.4); }
-  .reset-btn:active { transform: translateY(0); }
+.start-btn {
+  width:100%;
+  padding:12px;
+  background:var(--gold);
+  border:none;
+  border-radius:10px;
+  color:#000;
+  font-family:'Bebas Neue';
+  font-size:18px;
+  letter-spacing:1px;
+  cursor:pointer;
+  transition:all 0.2s;
+  box-shadow:0 4px 20px rgba(245,200,66,0.25);
+}
+.start-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(245,200,66,0.4); }
+.start-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 
-  /* ── CASE INFO CARDS ── */
-  .info-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-top: 12px;
-  }
-  .info-card-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .info-card-value {
-    font-size: 12px;
-    color: var(--text);
-    line-height: 1.5;
-  }
+/* Alert banner */
+.alert-banner {
+  background: rgba(239,68,68,0.08);
+  border:1px solid rgba(239,68,68,0.3);
+  border-radius:10px;
+  padding:14px;
+  display:none;
+}
+.alert-banner.show { display:block; }
+.alert-banner .alert-label {
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.1em;
+  color:#ef4444;
+  font-family:'DM Mono';
+  margin-bottom:6px;
+}
+.alert-banner .alert-text { font-size:13px; line-height:1.5; color:#fca5a5; }
+.alert-banner .suspect-highlight {
+  margin-top:10px;
+  background:rgba(239,68,68,0.15);
+  border-radius:6px;
+  padding:8px 12px;
+  font-family:'DM Mono';
+  font-size:13px;
+  font-weight:500;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.copy-btn {
+  background:rgba(245,200,66,0.15);
+  border:1px solid rgba(245,200,66,0.3);
+  border-radius:5px;
+  padding:3px 8px;
+  color:var(--gold);
+  font-size:10px;
+  cursor:pointer;
+  font-family:'DM Mono';
+  transition:all 0.15s;
+}
+.copy-btn:hover { background:rgba(245,200,66,0.3); }
 
-  .alert-item {
-    background: rgba(255,77,109,0.06);
-    border: 1px solid rgba(255,77,109,0.2);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-top: 8px;
-    font-size: 11px;
-    color: #ffb3bf;
-    line-height: 1.5;
-  }
-  .alert-item::before {
-    content: '⚠ ALERT: ';
-    color: var(--accent2);
-    font-weight: 600;
-  }
+/* Accounts */
+.acc-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.acc-chip {
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:5px 10px;
+  font-family:'DM Mono';
+  font-size:11px;
+  color:var(--text);
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.acc-chip:hover { border-color:var(--gold); color:var(--gold); }
+.acc-chip.primary { border-color:var(--gold); color:var(--gold); background:rgba(245,200,66,0.08); }
+.acc-chip.flagged { border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.08); }
 
-  .account-chip {
-    display: inline-block;
-    background: rgba(0,212,255,0.08);
-    border: 1px solid rgba(0,212,255,0.25);
-    border-radius: 4px;
-    padding: 3px 8px;
-    font-size: 11px;
-    color: var(--accent);
-    margin: 3px 3px 0 0;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .account-chip:hover { background: rgba(0,212,255,0.18); }
-  .account-chip.flagged {
-    background: rgba(255,77,109,0.1);
-    border-color: rgba(255,77,109,0.35);
-    color: var(--accent2);
-  }
+/* Score panel */
+.score-panel { padding:20px; }
+.score-big {
+  font-family:'Bebas Neue';
+  font-size:64px;
+  line-height:1;
+  color:var(--gold);
+  text-shadow:0 0 30px rgba(245,200,66,0.4);
+}
+.score-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:4px; }
 
-  /* ── TERMINAL PANEL (center) ── */
-  #panel-terminal {
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-  }
+.meter {
+  margin-top:14px;
+  height:8px;
+  background:rgba(255,255,255,0.06);
+  border-radius:4px;
+  overflow:hidden;
+}
+.meter-fill {
+  height:100%;
+  border-radius:4px;
+  background: linear-gradient(90deg, var(--gold2), var(--gold));
+  width:0%;
+  transition:width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
 
-  .terminal-output {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    font-size: 12px;
-    line-height: 1.7;
-  }
+.steps-row {
+  display:flex;
+  gap:6px;
+  margin-top:14px;
+}
+.step-dot {
+  flex:1;
+  height:6px;
+  border-radius:3px;
+  background:var(--border);
+  transition:background 0.3s;
+}
+.step-dot.used { background:var(--gold); }
+.step-dot.wasted { background:var(--red); }
 
-  .terminal-line {
-    margin-bottom: 12px;
-    animation: fadeInUp 0.3s ease;
-  }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+/* ── MAIN AREA ── */
+.main {
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
 
-  .tl-prompt { color: var(--accent); font-weight: 500; }
-  .tl-system { color: var(--muted); font-style: italic; }
-  .tl-result { color: var(--text); }
-  .tl-error { color: var(--accent2); }
-  .tl-success { color: var(--accent3); }
-  .tl-reward-pos { color: var(--accent3); }
-  .tl-reward-neg { color: var(--accent2); }
+/* ── STEP GUIDE ── */
+.step-guide {
+  border-bottom:1px solid var(--border);
+  padding:16px 24px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  overflow-x:auto;
+  flex-shrink:0;
+  background:rgba(18,20,26,0.6);
+}
 
-  .json-block {
-    background: #0a0f18;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-top: 6px;
-    font-size: 11px;
-    line-height: 1.6;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
-    color: #8fbcdb;
-    max-height: 240px;
-    overflow-y: auto;
-  }
+.guide-step {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
 
-  /* ── ACTION INPUT AREA ── */
-  .action-zone {
-    border-top: 1px solid var(--border);
-    padding: 16px;
-    background: var(--surface);
-    flex-shrink: 0;
-  }
+.gs-num {
+  width:28px; height:28px;
+  border-radius:50%;
+  border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  transition:all 0.3s;
+  flex-shrink:0;
+}
+.gs-num.active { border-color:var(--gold); color:var(--gold); background:rgba(245,200,66,0.1); box-shadow:0 0 12px rgba(245,200,66,0.2); }
+.gs-num.done { border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.1); }
 
-  .action-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 14px;
-  }
-  .action-tab {
-    flex: 1;
-    padding: 7px 4px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-    letter-spacing: 0.04em;
-  }
-  .action-tab:hover { border-color: var(--accent); color: var(--accent); }
-  .action-tab.active {
-    background: rgba(0,212,255,0.1);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+.gs-label { font-size:12px; color:var(--muted); white-space:nowrap; transition:color 0.3s; }
+.gs-label.active { color:var(--text); font-weight:600; }
+.gs-label.done { color:var(--green); }
 
-  .action-form { display: flex; flex-direction: column; gap: 8px; }
-  .action-form.hidden { display: none; }
+.gs-arrow { color:var(--border); font-size:16px; flex-shrink:0; }
 
-  .field-row { display: flex; gap: 8px; }
-  .field-row .field { flex: 1; }
+/* ── ACTION AREA ── */
+.action-area {
+  flex:1;
+  overflow-y:auto;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
 
-  .field label {
-    display: block;
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 4px;
-  }
-  .field input, .field textarea, .field select {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .field input:focus, .field textarea:focus, .field select:focus {
-    border-color: var(--accent);
-  }
-  .field textarea { resize: vertical; min-height: 60px; }
-  .field select option { background: var(--card); }
+/* Action card */
+.action-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  transition:all 0.3s;
+}
+.action-card.highlighted {
+  border-color:var(--gold);
+  box-shadow:0 0 0 1px rgba(245,200,66,0.15), 0 8px 32px rgba(245,200,66,0.1);
+}
 
-  .submit-action {
-    padding: 10px 20px;
-    background: var(--card);
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    align-self: flex-end;
-  }
-  .submit-action:hover {
-    background: rgba(0,212,255,0.12);
-    box-shadow: 0 0 16px rgba(0,212,255,0.3);
-  }
-  .submit-action:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
+.ac-header {
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  user-select:none;
+}
 
-  /* ── RIGHT PANEL — STATS ── */
-  #panel-stats {}
+.ac-icon {
+  width:36px; height:36px;
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px;
+  flex-shrink:0;
+}
 
-  .stat-block {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 10px;
-  }
-  .stat-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .stat-value {
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .stat-value.green { color: var(--accent3); }
-  .stat-value.red { color: var(--accent2); }
-  .stat-value.orange { color: var(--warn); }
+.ac-title { font-weight:600; font-size:14px; }
+.ac-desc { font-size:12px; color:var(--muted); margin-top:2px; }
 
-  /* ── PROGRESS BAR ── */
-  .progress-wrap {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 10px;
-  }
-  .progress-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-  }
-  .progress-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--accent), #0066ff);
-    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
-  }
-  .progress-fill.green { background: linear-gradient(90deg, var(--accent3), #00aa00); }
-  .progress-fill.red { background: linear-gradient(90deg, var(--accent2), #cc0033); }
+.ac-badge {
+  margin-left:auto;
+  font-size:10px;
+  font-family:'DM Mono';
+  padding:3px 10px;
+  border-radius:20px;
+  font-weight:600;
+  letter-spacing:0.06em;
+  flex-shrink:0;
+}
+.badge-do-first { background:rgba(245,200,66,0.15); color:var(--gold); border:1px solid rgba(245,200,66,0.3); }
+.badge-optional { background:rgba(107,114,128,0.15); color:var(--muted); border:1px solid var(--border); }
+.badge-final { background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); }
+.badge-done { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.3); }
 
-  /* ── LOG ── */
-  .log-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .log-item {
-    font-size: 10.5px;
-    color: var(--muted);
-    padding: 5px 8px;
-    border-left: 2px solid var(--border);
-    line-height: 1.4;
-  }
-  .log-item.pos { border-color: var(--accent3); color: #a0e8a0; }
-  .log-item.neg { border-color: var(--accent2); color: #ffb3bf; }
+.ac-body {
+  padding:20px;
+  display:none;
+}
+.ac-body.open { display:block; }
 
-  /* ── FEEDBACK BANNER ── */
-  .feedback-banner {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    line-height: 1.5;
-    display: none;
-    border: 1px solid;
-  }
-  .feedback-banner.info { background: rgba(0,212,255,0.07); border-color: rgba(0,212,255,0.25); color: #a0d8ef; display: block; }
-  .feedback-banner.success { background: rgba(57,255,20,0.07); border-color: rgba(57,255,20,0.3); color: #b0ffb0; display: block; }
-  .feedback-banner.warning { background: rgba(255,165,0,0.07); border-color: rgba(255,165,0,0.3); color: #ffd080; display: block; }
-  .feedback-banner.error { background: rgba(255,77,109,0.07); border-color: rgba(255,77,109,0.3); color: #ffb3bf; display: block; }
+.field-group { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.field-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
-  /* ── SOLVED OVERLAY ── */
-  .solved-banner {
-    display: none;
-    background: linear-gradient(135deg, rgba(57,255,20,0.12), rgba(0,212,255,0.08));
-    border: 1px solid var(--accent3);
-    border-radius: 10px;
-    padding: 16px;
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  .solved-banner.show { display: block; }
-  .solved-banner h3 {
-    font-family: var(--font-display);
-    font-size: 16px;
-    color: var(--accent3);
-    margin-bottom: 4px;
-  }
-  .solved-banner p { font-size: 11px; color: var(--muted); }
+.field label {
+  display:block;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  color:var(--muted);
+  margin-bottom:5px;
+  font-family:'DM Mono';
+}
+.field .hint {
+  font-size:11px;
+  color:rgba(245,200,66,0.7);
+  margin-top:4px;
+}
 
-  /* ── SCROLLBARS ── */
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.field input, .field select, .field textarea {
+  width:100%;
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  color:var(--text);
+  font-family:'DM Mono';
+  font-size:12px;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color:var(--gold); }
+.field textarea { resize:vertical; min-height:70px; line-height:1.5; }
+.field select option { background:var(--card2); }
 
-  /* ── EMPTY STATE ── */
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.7;
-  }
-  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+.exec-btn {
+  padding:10px 24px;
+  border-radius:8px;
+  border:none;
+  font-family:'DM Sans';
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.exec-btn.primary {
+  background:var(--gold);
+  color:#000;
+  box-shadow:0 4px 16px rgba(245,200,66,0.25);
+}
+.exec-btn.primary:hover { box-shadow:0 6px 24px rgba(245,200,66,0.4); transform:translateY(-1px); }
+.exec-btn.danger {
+  background:rgba(239,68,68,0.12);
+  color:#ef4444;
+  border:1px solid rgba(239,68,68,0.3);
+}
+.exec-btn.danger:hover { background:rgba(239,68,68,0.22); }
+.exec-btn:disabled { opacity:0.3; cursor:not-allowed; transform:none !important; }
 
-  /* ── RESPONSIVE ── */
-  @media (max-width: 900px) {
-    .app { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
-    .panel { height: auto; min-height: 300px; }
-    #panel-stats { display: none; }
-  }
+/* Result box */
+.result-box {
+  margin-top: 12px;
+  background: #05070d;
+  border: 1px solid #1f2330;
+  border-radius: 10px;
+  padding: 14px;
 
-  /* ── LOADING SPINNER ── */
-  .spinner {
-    display: inline-block;
-    width: 12px; height: 12px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-    margin-right: 6px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  font-family: 'DM Mono';
+  font-size: 12px;
+  line-height: 1.6;
+  color: #94a3b8;
 
-  .loading-indicator { display: none; align-items: center; font-size: 11px; color: var(--muted); }
-  .loading-indicator.show { display: flex; }
+  height: 200px;
+  max-height: 200px;
+
+  overflow-y: scroll !important;
+  overflow-x: auto;
+
+  white-space: pre;
+
+  display: block;
+}
+.result-box.show { display:block; }
+.result-box.success { border-color:rgba(34,197,94,0.3); color:#86efac; }
+.result-box.error { border-color:rgba(239,68,68,0.3); color:#fca5a5; }
+
+/* ── WHAT HAPPENED explainer ── */
+.explainer {
+  background:rgba(245,200,66,0.05);
+  border:1px solid rgba(245,200,66,0.15);
+  border-radius:10px;
+  padding:14px 16px;
+  margin-top:10px;
+  display:none;
+  font-size:12px;
+  line-height:1.6;
+  color:#d4b84a;
+}
+.explainer.show { display:block; }
+.explainer strong { color:var(--gold); }
+
+/* ── WIN SCREEN ── */
+.win-screen {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  z-index:200;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  gap:16px;
+  animation:fadeIn 0.4s ease;
+}
+.win-screen.show { display:flex; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.win-card {
+  background:var(--card);
+  border:2px solid var(--gold);
+  border-radius:20px;
+  padding:48px 56px;
+  max-width:480px;
+  box-shadow:0 0 80px rgba(245,200,66,0.25);
+}
+.win-trophy { font-size:72px; margin-bottom:8px; animation:bounce 1s ease infinite alternate; }
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+.win-title { font-family:'Bebas Neue'; font-size:52px; color:var(--gold); letter-spacing:2px; }
+.win-score { font-family:'Bebas Neue'; font-size:36px; color:var(--green); }
+.win-msg { font-size:14px; color:var(--muted); margin-top:8px; line-height:1.6; }
+.win-again {
+  margin-top:20px;
+  padding:12px 32px;
+  background:var(--gold);
+  border:none;
+  border-radius:10px;
+  color:#000;
+  font-family:'Bebas Neue';
+  font-size:20px;
+  letter-spacing:1px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.win-again:hover { transform:scale(1.04); box-shadow:0 0 24px rgba(245,200,66,0.5); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed;
+  bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px 20px;
+  font-size:13px;
+  z-index:300;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.good { border-color:var(--green); color:var(--green); }
+.toast.bad { border-color:var(--red); color:#fca5a5; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+@media(max-width:800px) {
+  .layout { grid-template-columns:1fr; }
+  .sidebar { height:auto; }
+}
 </style>
 </head>
 <body>
 
+<!-- WIN SCREEN -->
+<div class="win-screen" id="win-screen">
+  <div class="win-card">
+    <div class="win-trophy">🏆</div>
+    <div class="win-title">CASE SOLVED</div>
+    <div class="win-score" id="win-score-text">Score: 0%</div>
+    <div class="win-msg" id="win-msg">Outstanding investigation. You identified the suspect, gathered evidence, and filed a complete report.</div>
+    <button class="win-again" onclick="closeWin()">▶ SOLVE ANOTHER CASE</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <!-- HEADER -->
 <header>
-  <div class="logo-badge">V</div>
-  <div class="brand">
-    <h1>VERITAS AI</h1>
-    <p>Financial Crime Investigation Environment · OpenEnv Compatible</p>
+  <div class="logo">V</div>
+  <div>
+    <div class="brand-name">VERITAS AI</div>
+    <div class="brand-sub">Financial Crime Investigation · Guided Mode</div>
   </div>
-  <div class="status-bar">
-    <div class="status-dot" id="status-dot"></div>
-    <span id="status-text">AWAITING CONNECTION</span>
+  <div class="conn-badge">
+    <div class="conn-dot" id="conn-dot"></div>
+    <span id="conn-text">NOT CONNECTED</span>
   </div>
 </header>
 
-<!-- MAIN APP -->
-<div class="app">
+<div class="layout">
 
-  <!-- LEFT: CASE PANEL -->
-  <div class="panel" id="panel-case">
-    <div class="panel-header">
-      <span class="panel-icon">📁</span>
-      <h2>Case Setup</h2>
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- Setup -->
+    <div class="sidebar-section">
+      <div class="section-label">① Server & Difficulty</div>
+      <input class="url-input" id="server-url" value="http://localhost:7860" placeholder="Server URL">
+      <div class="diff-pills">
+        <button class="diff-pill active" onclick="pickDiff('task_easy',this)">Easy</button>
+        <button class="diff-pill" onclick="pickDiff('task_medium',this)">Medium</button>
+        <button class="diff-pill" onclick="pickDiff('task_hard',this)">Hard</button>
+      </div>
+      <button class="start-btn" id="start-btn" onclick="startCase()">▶ START NEW CASE</button>
     </div>
-    <div class="panel-body">
 
-      <div class="task-selector">
-        <button class="task-btn active" onclick="selectTask('task_easy')" id="btn-task_easy">
-          <span>Task Easy — Card Scheme</span>
-          <span class="difficulty-badge diff-easy">EASY</span>
-        </button>
-        <button class="task-btn" onclick="selectTask('task_medium')" id="btn-task_medium">
-          <span>Task Medium — Layering</span>
-          <span class="difficulty-badge diff-medium">MEDIUM</span>
-        </button>
-        <button class="task-btn" onclick="selectTask('task_hard')" id="btn-task_hard">
-          <span>Task Hard — Coordinated</span>
-          <span class="difficulty-badge diff-hard">HARD</span>
-        </button>
-      </div>
-
-      <div class="field" style="margin-bottom:12px;">
-        <label>Server URL</label>
-        <input type="text" id="server-url" value="https://ratnesh18-veritas-ai.hf.space" placeholder="https://your-space.hf.space">
-      </div>
-
-      <button class="reset-btn" onclick="doReset()" id="reset-btn">▶ Start Investigation</button>
-
-      <div id="case-info" style="margin-top:16px; display:none;">
-        <div class="info-card">
-          <div class="info-card-label">Case ID</div>
-          <div class="info-card-value" id="case-id-val" style="font-size:11px; word-break:break-all;">—</div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-label">Task Description</div>
-          <div class="info-card-value" id="task-desc-val" style="font-size:11px; line-height:1.6;">—</div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-label">Initial Alerts</div>
-          <div id="alerts-val">—</div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-label">Accounts in Scope <span style="color:var(--muted); font-size:10px;">(click to fill)</span></div>
-          <div id="accounts-val">—</div>
+    <!-- Alert -->
+    <div class="sidebar-section">
+      <div class="section-label">② The Alert (Your Target)</div>
+      <div class="alert-banner" id="alert-banner">
+        <div class="alert-label">⚠ Suspicious Activity Detected</div>
+        <div class="alert-text" id="alert-text">—</div>
+        <div class="suspect-highlight">
+          <span>🎯 Primary Suspect: <strong id="suspect-display">—</strong></span>
+          <button class="copy-btn" onclick="copySuspect()">COPY ID</button>
         </div>
       </div>
-
+      <div id="no-case-msg" style="font-size:12px;color:var(--muted);padding:8px 0;">Start a case to see the alert.</div>
     </div>
+
+    <!-- Accounts -->
+    <div class="sidebar-section">
+      <div class="section-label">③ Accounts (click to fill)</div>
+      <div class="acc-chips" id="acc-chips">
+        <span style="font-size:12px;color:var(--muted);">No case active.</span>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-panel">
+      <div class="section-label">Episode Score</div>
+      <div class="score-big" id="score-display">—</div>
+      <div class="score-label">Score · <span id="steps-display">0/8</span> steps used</div>
+      <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
+      <div class="steps-row" id="steps-row"></div>
+      <div style="margin-top:14px; font-size:11px; color:var(--muted); font-family:'DM Mono';">
+        Flagged: <span id="flagged-display" style="color:var(--green);">none</span>
+      </div>
+    </div>
+
   </div>
 
-  <!-- CENTER: TERMINAL -->
-  <div class="panel" id="panel-terminal" style="border-right:1px solid var(--border);">
-    <div class="panel-header">
-      <span class="panel-icon">💻</span>
-      <h2>Investigation Terminal</h2>
-      <div class="loading-indicator" id="loading" style="margin-left:auto;">
-        <div class="spinner"></div> Processing...
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- Step guide ribbon -->
+    <div class="step-guide">
+      <div class="guide-step">
+        <div class="gs-num" id="gs1">1</div>
+        <div class="gs-label" id="gl1">Query Suspect</div>
+      </div>
+      <div class="gs-arrow">›</div>
+      <div class="guide-step">
+        <div class="gs-num" id="gs2">2</div>
+        <div class="gs-label" id="gl2">Look Up Profile</div>
+      </div>
+      <div class="gs-arrow">›</div>
+      <div class="guide-step">
+        <div class="gs-num" id="gs3">3</div>
+        <div class="gs-label" id="gl3">Flag Suspect</div>
+      </div>
+      <div class="gs-arrow">›</div>
+      <div class="guide-step">
+        <div class="gs-num" id="gs4">4</div>
+        <div class="gs-label" id="gl4">Submit Report</div>
+      </div>
+      <div style="margin-left:auto; font-size:11px; color:var(--muted); font-family:'DM Mono'; white-space:nowrap;">
+        Follow steps in order → max score
       </div>
     </div>
 
-    <div class="terminal-output" id="terminal">
-      <div class="empty-state">
-        <div class="icon">🔍</div>
-        <div>Select a task difficulty and click<br><strong style="color:var(--accent)">Start Investigation</strong><br>to open a case.</div>
-      </div>
-    </div>
+    <!-- Action cards -->
+    <div class="action-area">
 
-    <!-- ACTION ZONE -->
-    <div class="action-zone" id="action-zone" style="display:none;">
-      <div class="action-tabs">
-        <button class="action-tab active" onclick="switchTab('query_transactions')">query_txn</button>
-        <button class="action-tab" onclick="switchTab('lookup_account')">lookup_acct</button>
-        <button class="action-tab" onclick="switchTab('flag_account')">flag_acct</button>
-        <button class="action-tab" onclick="switchTab('submit_report')">submit_report</button>
-      </div>
-
-      <!-- query_transactions -->
-      <div class="action-form" id="form-query_transactions">
-        <div class="field">
-          <label>Account ID *</label>
-          <input type="text" id="qt-account" placeholder="e.g. ACC_001">
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Date From</label><input type="text" id="qt-date-from" placeholder="YYYY-MM-DD"></div>
-          <div class="field"><label>Date To</label><input type="text" id="qt-date-to" placeholder="YYYY-MM-DD"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Min Amount</label><input type="number" id="qt-min" placeholder="0"></div>
-          <div class="field"><label>Max Amount</label><input type="number" id="qt-max" placeholder="∞"></div>
-        </div>
-        <button class="submit-action" onclick="doStep('query_transactions')" id="step-btn">Execute →</button>
-      </div>
-
-      <!-- lookup_account -->
-      <div class="action-form hidden" id="form-lookup_account">
-        <div class="field">
-          <label>Account ID *</label>
-          <input type="text" id="la-account" placeholder="e.g. ACC_001">
-        </div>
-        <button class="submit-action" onclick="doStep('lookup_account')">Execute →</button>
-      </div>
-
-      <!-- flag_account -->
-      <div class="action-form hidden" id="form-flag_account">
-        <div class="field">
-          <label>Account ID *</label>
-          <input type="text" id="fa-account" placeholder="e.g. ACC_001">
-        </div>
-        <div class="field">
-          <label>Reason</label>
-          <input type="text" id="fa-reason" placeholder="Reason for flagging...">
-        </div>
-        <button class="submit-action" onclick="doStep('flag_account')">Flag Account →</button>
-      </div>
-
-      <!-- submit_report -->
-      <div class="action-form hidden" id="form-submit_report">
-        <div class="field-row">
-          <div class="field">
-            <label>Primary Suspect *</label>
-            <input type="text" id="sr-suspect" placeholder="Account ID">
+      <!-- ── STEP 1: Query Transactions ── -->
+      <div class="action-card" id="card-query" style="border-color:rgba(245,200,66,0.4);">
+        <div class="ac-header" onclick="toggleCard('query')">
+          <div class="ac-icon" style="background:rgba(245,200,66,0.1);">🔍</div>
+          <div>
+            <div class="ac-title">Step 1 — Query Transactions</div>
+            <div class="ac-desc">Pull the transaction history for the suspect account</div>
           </div>
-          <div class="field">
-            <label>Case Type *</label>
-            <select id="sr-case-type">
-              <option value="">Select...</option>
-              <option value="card_scheme">card_scheme</option>
-              <option value="layering_scheme">layering_scheme</option>
-              <option value="coordinated_scheme">coordinated_scheme</option>
-            </select>
+          <span class="ac-badge badge-do-first" id="badge-query">DO THIS FIRST</span>
+        </div>
+        <div class="ac-body open" id="body-query">
+          <div class="field-group">
+            <div class="field">
+              <label>Account ID <span style="color:var(--gold)">*</span></label>
+              <input type="text" id="qt-acc" placeholder="Paste suspect account e.g. ACC-8472">
+              <div class="hint">💡 Copy the suspect ID from the sidebar and paste here</div>
+            </div>
+            <div class="field-row2">
+              <div class="field">
+                <label>Date From</label>
+                <input type="text" id="qt-from" value="2024-01-01">
+              </div>
+              <div class="field">
+                <label>Date To</label>
+                <input type="text" id="qt-to" value="2026-04-09">
+              </div>
+            </div>
+            <div class="field-row2">
+              <div class="field">
+                <label>Min Amount ($)</label>
+                <input type="number" id="qt-min" value="100">
+              </div>
+              <div class="field">
+                <label>Max Amount ($)</label>
+                <input type="number" id="qt-max" placeholder="leave blank = all">
+              </div>
+            </div>
+          </div>
+          <button class="exec-btn primary" onclick="doQuery()" id="btn-query">Execute Query →</button>
+          <div class="result-box" id="res-query"></div>
+          <div class="explainer" id="exp-query">
+            ✅ <strong>What this does:</strong> Fetches all transactions for the suspect account. You're looking for high-value purchases at unusual merchants. This is your evidence.
           </div>
         </div>
-        <div class="field">
-          <label>Associates (comma-separated)</label>
-          <input type="text" id="sr-associates" placeholder="ACC_002, ACC_003">
-        </div>
-        <div class="field">
-          <label>Evidence Summary</label>
-          <textarea id="sr-evidence" placeholder="Describe the evidence pattern, device IDs, IP patterns, transaction behaviour..."></textarea>
-        </div>
-        <button class="submit-action" style="background:rgba(255,77,109,0.1);border-color:var(--accent2);color:var(--accent2);" onclick="doStep('submit_report')">⚡ Submit Report</button>
       </div>
 
-    </div>
-  </div>
-
-  <!-- RIGHT: STATS -->
-  <div class="panel" id="panel-stats">
-    <div class="panel-header">
-      <span class="panel-icon">📊</span>
-      <h2>Episode Stats</h2>
-    </div>
-    <div class="panel-body">
-
-      <div class="solved-banner" id="solved-banner">
-        <h3>✓ CASE SOLVED</h3>
-        <p>Outstanding investigation. Report accepted.</p>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <div class="stat-block" style="flex:1;">
-          <div class="stat-label">Steps</div>
-          <div class="stat-value" id="stat-steps">0</div>
+      <!-- ── STEP 2: Lookup Account ── -->
+      <div class="action-card" id="card-lookup">
+        <div class="ac-header" onclick="toggleCard('lookup')">
+          <div class="ac-icon" style="background:rgba(59,130,246,0.1);">👤</div>
+          <div>
+            <div class="ac-title">Step 2 — Look Up Account Profile</div>
+            <div class="ac-desc">Get name, address, risk score for the suspect</div>
+          </div>
+          <span class="ac-badge badge-optional" id="badge-lookup">STEP 2</span>
         </div>
-        <div class="stat-block" style="flex:1;">
-          <div class="stat-label">Max</div>
-          <div class="stat-value orange" id="stat-max">—</div>
+        <div class="ac-body" id="body-lookup">
+          <div class="field">
+            <label>Account ID <span style="color:var(--gold)">*</span></label>
+            <input type="text" id="la-acc" placeholder="Same suspect account ID">
+            <div class="hint">💡 Use the same account ID as Step 1</div>
+          </div>
+          <br>
+          <button class="exec-btn primary" onclick="doLookup()" id="btn-lookup">Look Up Profile →</button>
+          <div class="result-box" id="res-lookup"></div>
+          <div class="explainer" id="exp-lookup">
+            ✅ <strong>What this does:</strong> Fetches the full profile — name, risk level, account type. Adds credibility to your report.
+          </div>
         </div>
       </div>
 
-      <div class="progress-wrap">
-        <div class="progress-label">
-          <span>Score</span>
-          <span id="score-pct">0%</span>
+      <!-- ── STEP 3: Flag Account ── -->
+      <div class="action-card" id="card-flag">
+        <div class="ac-header" onclick="toggleCard('flag')">
+          <div class="ac-icon" style="background:rgba(245,200,66,0.08);">🚩</div>
+          <div>
+            <div class="ac-title">Step 3 — Flag the Suspect</div>
+            <div class="ac-desc">Mark the account as suspicious before submitting</div>
+          </div>
+          <span class="ac-badge badge-optional" id="badge-flag">STEP 3</span>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="score-bar" style="width:0%"></div>
+        <div class="ac-body" id="body-flag">
+          <div class="field-group">
+            <div class="field">
+              <label>Account ID <span style="color:var(--gold)">*</span></label>
+              <input type="text" id="fa-acc" placeholder="Suspect account ID">
+            </div>
+            <div class="field">
+              <label>Reason</label>
+              <input type="text" id="fa-reason" value="Velocity anomaly: 6+ high-value transactions at unlisted merchants within 14 days">
+            </div>
+          </div>
+          <button class="exec-btn primary" onclick="doFlag()" id="btn-flag">🚩 Flag Account →</button>
+          <div class="result-box" id="res-flag"></div>
+          <div class="explainer" id="exp-flag">
+            ✅ <strong>What this does:</strong> Officially marks the account as suspicious. The grader checks this was done before submitting.
+          </div>
         </div>
       </div>
 
-      <div class="progress-wrap">
-        <div class="progress-label">
-          <span>Steps Used</span>
-          <span id="steps-pct">0%</span>
+      <!-- ── STEP 4: Submit Report ── -->
+      <div class="action-card" id="card-report">
+        <div class="ac-header" onclick="toggleCard('report')">
+          <div class="ac-icon" style="background:rgba(239,68,68,0.1);">⚡</div>
+          <div>
+            <div class="ac-title">Step 4 — Submit Final Report</div>
+            <div class="ac-desc">File your report — this determines your final score</div>
+          </div>
+          <span class="ac-badge badge-final" id="badge-report">CLOSES CASE</span>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill red" id="steps-bar" style="width:0%"></div>
+        <div class="ac-body" id="body-report">
+          <div class="field-group">
+            <div class="field-row2">
+              <div class="field">
+                <label>Primary Suspect <span style="color:var(--gold)">*</span></label>
+                <input type="text" id="sr-suspect" placeholder="ACC-XXXX">
+                <div class="hint">💡 The alert account</div>
+              </div>
+              <div class="field">
+                <label>Case Type <span style="color:var(--gold)">*</span></label>
+                <select id="sr-casetype">
+                  <option value="card_scheme">card_scheme (Easy)</option>
+                  <option value="layering_scheme">layering_scheme (Medium)</option>
+                  <option value="coordinated_scheme">coordinated_scheme (Hard)</option>
+                </select>
+                <div class="hint" id="casetype-hint">💡 Easy task = card_scheme</div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Associates (comma-separated)</label>
+              <input type="text" id="sr-associates" placeholder="ACC-002, ACC-003 — leave blank if none found">
+            </div>
+            <div class="field">
+              <label>Evidence Summary <span style="color:var(--gold)">*</span></label>
+              <textarea id="sr-evidence" placeholder="Describe what you found..."></textarea>
+              <div class="hint">💡 Mention: velocity anomaly, merchant names, amounts, dates, account behaviour</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="exec-btn danger" onclick="doSubmit()" id="btn-submit">⚡ Submit Report & Close Case</button>
+            <button class="exec-btn" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);" onclick="autoFillEvidence()">✨ Auto-fill Evidence</button>
+          </div>
+          <div class="result-box" id="res-report"></div>
         </div>
       </div>
 
-      <div class="stat-block">
-        <div class="stat-label">Cumulative Reward</div>
-        <div class="stat-value" id="stat-reward">0.00</div>
-      </div>
-
-      <div class="stat-block">
-        <div class="stat-label">Flagged Accounts</div>
-        <div id="flagged-list" style="font-size:12px;color:var(--muted);">None</div>
-      </div>
-
-      <div class="panel-header" style="position:static;margin:12px 0 6px;padding:8px 0;border:none;">
-        <h2 style="color:var(--muted);">Action Log</h2>
-      </div>
-      <ul class="log-list" id="action-log"></ul>
-
-    </div>
-  </div>
-
-</div>
+    </div><!-- /action-area -->
+  </div><!-- /main -->
+</div><!-- /layout -->
 
 <script>
-// ── STATE ──────────────────────────────────────────────
-const state = {
-  serverUrl: '',
+// ── STATE ──────────────────────────────────────────────────────
+const S = {
+  url: 'http://localhost:7860',
   taskId: 'task_easy',
-  episodeActive: false,
-  stepCount: 0,
+  active: false,
+  steps: 0,
   maxSteps: 8,
-  cumulativeReward: 0,
-  solved: false,
-  flaggedAccounts: [],
-  accountsInScope: [],
-  actionLog: [],
+  score: 0,
+  suspect: null,         // primary alert account
+  accounts: [],
+  flagged: [],
+  txnData: null,         // store query results for auto-evidence
+  profileData: null,
+  caseId: null,
 };
 
-// ── TASK SELECTION ─────────────────────────────────────
-function selectTask(taskId) {
-  state.taskId = taskId;
-  document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-' + taskId).classList.add('active');
+// ── DIFF SELECT ─────────────────────────────────────────────────
+function pickDiff(id, el) {
+  S.taskId = id;
+  document.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  // Update case type hint
+  const hints = { task_easy:'card_scheme', task_medium:'layering_scheme', task_hard:'coordinated_scheme' };
+  document.getElementById('casetype-hint').textContent = '💡 This task = ' + hints[id];
+  document.getElementById('sr-casetype').value = hints[id];
 }
 
-// ── SWITCH ACTION TAB ──────────────────────────────────
-function switchTab(action) {
-  document.querySelectorAll('.action-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  document.querySelectorAll('.action-form').forEach(f => f.classList.add('hidden'));
-  document.getElementById('form-' + action).classList.remove('hidden');
+// ── TOAST ───────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── TERMINAL LOGGING ───────────────────────────────────
-function termLog(html, cls = 'tl-result') {
-  const terminal = document.getElementById('terminal');
-  // Clear empty state
-  const empty = terminal.querySelector('.empty-state');
-  if (empty) empty.remove();
-  const div = document.createElement('div');
-  div.className = 'terminal-line ' + cls;
-  div.innerHTML = html;
-  terminal.appendChild(div);
-  terminal.scrollTop = terminal.scrollHeight;
-}
-
-function termPrompt(text) {
-  termLog('<span class="tl-prompt">❯</span> ' + text);
-}
-
-function termJSON(obj) {
-  const pre = document.createElement('div');
-  pre.className = 'terminal-line';
-  const block = document.createElement('div');
-  block.className = 'json-block';
-  block.textContent = JSON.stringify(obj, null, 2);
-  pre.appendChild(block);
-  document.getElementById('terminal').appendChild(pre);
-  document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
-}
-
-// ── STATUS ─────────────────────────────────────────────
-function setStatus(text, color = '#5a7a99') {
-  document.getElementById('status-text').textContent = text;
-  document.getElementById('status-dot').style.background = color;
-}
-
-function setLoading(on) {
-  document.getElementById('loading').classList.toggle('show', on);
-  const stepBtn = document.querySelector('.submit-action');
-  if (stepBtn) stepBtn.disabled = on;
-}
-
-// ── RESET (start episode) ──────────────────────────────
-async function doReset() {
-  state.serverUrl = document.getElementById('server-url').value.trim().replace(/\/$/, '');
-  setLoading(true);
-  setStatus('CONNECTING...', '#ffa500');
-  termLog('<span class="tl-system">── Starting new investigation (' + state.taskId + ') ──</span>');
-
-  try {
-    const res = await fetch(state.serverUrl + '/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: state.taskId }),
+// ── COPY SUSPECT ────────────────────────────────────────────────
+function copySuspect() {
+  if (!S.suspect) return;
+  navigator.clipboard.writeText(S.suspect).then(() => {
+    // Auto-fill all account fields
+    ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
+      document.getElementById(id).value = S.suspect;
     });
+    toast('✓ ' + S.suspect + ' copied & filled into all fields!', 'good');
+  });
+}
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error('HTTP ' + res.status + ': ' + err);
-    }
+// ── TOGGLE CARD ─────────────────────────────────────────────────
+function toggleCard(name) {
+  const body = document.getElementById('body-' + name);
+  body.classList.toggle('open');
+}
 
-    const data = await res.json();
-    handleResetResponse(data);
-    setStatus('CONNECTED · CASE OPEN', '#39ff14');
-  } catch (e) {
-    termLog('⚠ Connection error: ' + e.message, 'tl-error');
-    setStatus('ERROR', '#ff4d6d');
-  } finally {
-    setLoading(false);
+// ── STEP GUIDE ──────────────────────────────────────────────────
+function setGuideStep(step) {
+  for (let i = 1; i <= 4; i++) {
+    const num = document.getElementById('gs' + i);
+    const lbl = document.getElementById('gl' + i);
+    num.className = 'gs-num';
+    lbl.className = 'gs-label';
+    if (i < step) { num.classList.add('done'); num.textContent = '✓'; lbl.classList.add('done'); }
+    else if (i === step) { num.classList.add('active'); lbl.classList.add('active'); }
   }
 }
 
-function handleResetResponse(obs) {
-  // Reset state
-  state.episodeActive = true;
-  state.stepCount = 0;
-  state.maxSteps = obs.max_steps || 8;
-  state.cumulativeReward = 0;
-  state.solved = false;
-  state.flaggedAccounts = [];
-  state.accountsInScope = obs.accounts_in_scope || [];
-  state.actionLog = [];
+// ── UPDATE SCORE UI ─────────────────────────────────────────────
+function updateScoreUI(obs) {
+  const score = (obs.partial_score || 0) * 100;
+  const steps = obs.steps_taken || S.steps;
+  const max = obs.max_steps || S.maxSteps;
+  S.score = score;
+  S.steps = steps;
 
-  // Show case info
-  document.getElementById('case-info').style.display = 'block';
-  document.getElementById('action-zone').style.display = 'block';
-  document.getElementById('case-id-val').textContent = obs.case_id || '—';
-  document.getElementById('task-desc-val').textContent = obs.task_description || '—';
+  document.getElementById('score-display').textContent = score.toFixed(0) + '%';
+  document.getElementById('steps-display').textContent = steps + '/' + max;
+  document.getElementById('meter-fill').style.width = Math.min(score, 100) + '%';
+  document.getElementById('flagged-display').textContent =
+    (obs.flagged_accounts || S.flagged).join(', ') || 'none';
 
-  // Alerts
-  const alertsEl = document.getElementById('alerts-val');
-  alertsEl.innerHTML = '';
-  (obs.initial_alerts || []).forEach(a => {
+  // Step dots
+  const row = document.getElementById('steps-row');
+  row.innerHTML = '';
+  for (let i = 0; i < max; i++) {
     const d = document.createElement('div');
-    d.className = 'alert-item';
-    d.textContent = typeof a === 'string' ? a : JSON.stringify(a);
-    alertsEl.appendChild(d);
-  });
-
-  // Accounts
-  const accsEl = document.getElementById('accounts-val');
-  accsEl.innerHTML = '';
-  (obs.accounts_in_scope || []).forEach(acc => {
-    const chip = document.createElement('span');
-    chip.className = 'account-chip';
-    chip.textContent = acc;
-    chip.onclick = () => fillAccountField(acc);
-    accsEl.appendChild(chip);
-  });
-
-  // Stats
-  updateStats(obs);
-
-  // Terminal
-  termLog('<span class="tl-success">✓ Case opened: ' + obs.case_id + '</span>');
-  termLog('Difficulty: <strong>' + obs.difficulty + '</strong> | Max steps: ' + obs.max_steps);
-  termLog('<span class="tl-system">Accounts in scope: ' + (obs.accounts_in_scope || []).join(', ') + '</span>');
-  if ((obs.initial_alerts || []).length) {
-    termLog('<span style="color:var(--accent2)">Initial alerts (' + obs.initial_alerts.length + '):</span>');
-    obs.initial_alerts.forEach(a => termLog('  › ' + (typeof a === 'string' ? a : JSON.stringify(a))));
+    d.className = 'step-dot' + (i < steps ? ' used' : '');
+    row.appendChild(d);
   }
-  termLog('<span class="tl-system">── Begin your investigation ──</span>');
-
-  // Clear solved banner
-  document.getElementById('solved-banner').classList.remove('show');
 }
 
-function fillAccountField(acc) {
-  // Fill the currently active tab's account field
-  const activeForm = document.querySelector('.action-form:not(.hidden)');
-  if (!activeForm) return;
-  const inp = activeForm.querySelector('input[type="text"]');
-  if (inp) { inp.value = acc; inp.focus(); }
-}
-
-// ── STEP ───────────────────────────────────────────────
-async function doStep(actionType) {
-  if (!state.episodeActive) {
-    termLog('⚠ Start an investigation first.', 'tl-error');
-    return;
-  }
-  if (state.solved) {
-    termLog('⚠ Episode complete. Click Start Investigation to begin a new case.', 'tl-error');
-    return;
-  }
-
-  const payload = buildPayload(actionType);
-  if (!payload) return;
-
-  setLoading(true);
-  termLog('');
-  termPrompt(actionType + (payload.account_id ? ' ' + payload.account_id : ''));
+// ── START CASE ──────────────────────────────────────────────────
+async function startCase() {
+  S.url = document.getElementById('server-url').value.trim().replace(/\/$/,'');
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
 
   try {
-    const res = await fetch(state.serverUrl + '/step', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    const r = await fetch(S.url + '/reset', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ task_id: S.taskId }),
     });
-    const data = await res.json();
-    handleStepResponse(data, actionType);
-  } catch (e) {
-    termLog('⚠ Request failed: ' + e.message, 'tl-error');
-  } finally {
-    setLoading(false);
-  }
-}
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const obs = data.observation || data;
+    S.caseId = obs.case_id;
+    S.maxSteps = obs.max_steps || 8;
+    S.steps = 0;
+    S.score = 0;
+    S.txnData = null;
+    S.profileData = null;
+    S.flagged = [];
+    S.active = true;
 
-function buildPayload(actionType) {
-  const p = { action_type: actionType };
+    // Extract primary suspect from initial alerts
+    const alerts = obs.initial_alerts || [];
+    S.accounts = obs.accounts_in_scope || [];
 
-  if (actionType === 'query_transactions') {
-    const acc = document.getElementById('qt-account').value.trim();
-    if (!acc) { termLog('⚠ account_id is required.', 'tl-error'); return null; }
-    p.account_id = acc;
-    const df = document.getElementById('qt-date-from').value.trim();
-    const dt = document.getElementById('qt-date-to').value.trim();
-    const mn = document.getElementById('qt-min').value.trim();
-    const mx = document.getElementById('qt-max').value.trim();
-    if (df) p.date_from = df;
-    if (dt) p.date_to = dt;
-    if (mn) p.min_amount = parseFloat(mn);
-    if (mx) p.max_amount = parseFloat(mx);
-  }
-  else if (actionType === 'lookup_account') {
-    const acc = document.getElementById('la-account').value.trim();
-    if (!acc) { termLog('⚠ account_id is required.', 'tl-error'); return null; }
-    p.account_id = acc;
-  }
-  else if (actionType === 'flag_account') {
-    const acc = document.getElementById('fa-account').value.trim();
-    if (!acc) { termLog('⚠ account_id is required.', 'tl-error'); return null; }
-    p.account_id = acc;
-    const reason = document.getElementById('fa-reason').value.trim();
-    if (reason) p.reason = reason;
-  }
-  else if (actionType === 'submit_report') {
-    const suspect = document.getElementById('sr-suspect').value.trim();
-    if (!suspect) { termLog('⚠ primary_suspect is required.', 'tl-error'); return null; }
-    p.primary_suspect = suspect;
-    p.case_type = document.getElementById('sr-case-type').value;
-    const assocStr = document.getElementById('sr-associates').value.trim();
-    if (assocStr) p.associates = assocStr.split(',').map(s => s.trim()).filter(Boolean);
-    const ev = document.getElementById('sr-evidence').value.trim();
-    if (ev) p.evidence_summary = ev;
-  }
-
-  return p;
-}
-
-function handleStepResponse(obs, actionType) {
-  state.stepCount = obs.steps_taken || state.stepCount + 1;
-
-  // Log reward
-  const reward = obs.reward;
-  const rewardStr = (reward >= 0 ? '+' : '') + (reward || 0).toFixed(3);
-  const rewardClass = reward >= 0 ? 'tl-reward-pos' : 'tl-reward-neg';
-  termLog('Reward: <span class="' + rewardClass + '">' + rewardStr + '</span> | Steps: ' + obs.steps_taken + '/' + obs.max_steps);
-
-  if (obs.action_error) {
-    termLog('⚠ ' + obs.action_error, 'tl-error');
-  }
-
-  if (obs.action_result !== null && obs.action_result !== undefined) {
-    if (Array.isArray(obs.action_result)) {
-      termLog('Retrieved ' + obs.action_result.length + ' record(s):');
-      termJSON(obs.action_result);
-    } else if (typeof obs.action_result === 'object') {
-      termLog('Account profile:');
-      termJSON(obs.action_result);
-    } else {
-      termLog('Result: ' + obs.action_result);
+    // Find the account mentioned in the first alert
+    S.suspect = null;
+    if (alerts.length > 0) {
+      const alertObj = alerts[0];
+      const alertText = typeof alertObj === 'string' ? alertObj :
+        (alertObj.description || alertObj.account_id || JSON.stringify(alertObj));
+      // Try to extract ACC-XXXX pattern
+      const match = alertText.match(/ACC-\d+/);
+      if (match) S.suspect = match[0];
+      else if (alertObj.account_id) S.suspect = alertObj.account_id;
     }
-  }
+    if (!S.suspect && S.accounts.length) S.suspect = S.accounts[0];
 
-  if (obs.feedback) {
-    termLog('<span class="tl-system">» ' + obs.feedback + '</span>');
-  }
+    // Update sidebar
+    document.getElementById('alert-banner').classList.add('show');
+    document.getElementById('no-case-msg').style.display = 'none';
+    const alertText = alerts.length
+      ? (typeof alerts[0] === 'string' ? alerts[0] : (alerts[0].description || JSON.stringify(alerts[0])))
+      : 'No alert details.';
+    document.getElementById('alert-text').textContent = alertText;
+    document.getElementById('suspect-display').textContent = S.suspect || '?';
 
-  // Flagging
-  if (actionType === 'flag_account' && !obs.action_error) {
-    const acc = document.getElementById('fa-account').value.trim();
-    if (acc && !state.flaggedAccounts.includes(acc)) {
-      state.flaggedAccounts.push(acc);
-      // Update chip
-      document.querySelectorAll('.account-chip').forEach(c => {
-        if (c.textContent === acc) c.classList.add('flagged');
+    // Account chips
+    const chips = document.getElementById('acc-chips');
+    chips.innerHTML = '';
+    S.accounts.forEach(acc => {
+      const c = document.createElement('span');
+      c.className = 'acc-chip' + (acc === S.suspect ? ' primary' : '');
+      c.textContent = acc;
+      c.onclick = () => fillAll(acc);
+      chips.appendChild(c);
+    });
+
+    // Auto-fill suspect into fields
+    if (S.suspect) {
+      ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
+        document.getElementById(id).value = S.suspect;
       });
     }
+
+    // Set case type
+    const caseTypes = { task_easy:'card_scheme', task_medium:'layering_scheme', task_hard:'coordinated_scheme' };
+    document.getElementById('sr-casetype').value = caseTypes[S.taskId] || 'card_scheme';
+
+    updateScoreUI(obs);
+    setGuideStep(1);
+
+    // Highlight step 1
+    document.getElementById('card-query').classList.add('highlighted');
+    document.getElementById('body-query').classList.add('open');
+
+    // Reset result boxes
+    ['query','lookup','flag','report'].forEach(n => {
+      document.getElementById('res-' + n).className = 'result-box';
+      document.getElementById('exp-' + n).className = 'explainer';
+      document.getElementById('badge-' + n).className = 'ac-badge badge-optional';
+    });
+    document.getElementById('badge-query').className = 'ac-badge badge-do-first';
+    document.getElementById('badge-query').textContent = 'DO THIS FIRST';
+    document.getElementById('badge-report').className = 'ac-badge badge-final';
+
+    setConn(true);
+    toast('✓ Case opened! Suspect auto-filled.', 'good');
+
+  } catch(e) {
+    toast('⚠ ' + e.message, 'bad');
+    setConn(false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ START NEW CASE';
   }
+}
 
-  if (obs.flagged_accounts) state.flaggedAccounts = obs.flagged_accounts;
+function fillAll(acc) {
+  ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
+    document.getElementById(id).value = acc;
+  });
+  toast('Filled ' + acc + ' into all forms', 'good');
+}
 
-  // Score
-  state.cumulativeReward += (reward || 0);
-  updateStats(obs);
+function setConn(on) {
+  document.getElementById('conn-dot').className = 'conn-dot' + (on ? ' live' : '');
+  document.getElementById('conn-text').textContent = on ? 'CONNECTED · CASE OPEN' : 'NOT CONNECTED';
+}
 
-  // Log entry
-  const logItem = { action: actionType, reward, step: obs.steps_taken };
-  state.actionLog.push(logItem);
-  addLogItem(logItem);
+// ── STEP ────────────────────────────────────────────────────────
+async function callStep(payload) {
+  const r = await fetch(S.url + '/step', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action: payload, case_id: S.caseId }),
+  });
+  const data = await r.json();
+  const obs = Object.assign({}, data.observation || data, { reward: data.reward, done: data.done });
+  updateScoreUI(obs);
+  if (obs.flagged_accounts) S.flagged = obs.flagged_accounts;
+  return obs;
+}
 
-  // Solved / done
-  if (obs.done) {
-    if (obs.partial_score >= 0.8) {
-      state.solved = true;
-      document.getElementById('solved-banner').classList.add('show');
-      termLog('<span class="tl-success">★ CASE CLOSED — Score: ' + (obs.partial_score * 100).toFixed(1) + '%</span>');
-      setStatus('CASE SOLVED ✓', '#39ff14');
-      const fill = document.getElementById('score-bar');
-      fill.classList.add('green');
+// ── QUERY ───────────────────────────────────────────────────────
+async function doQuery() {
+  if (!S.active) { toast('Start a case first!', 'bad'); return; }
+  const acc = document.getElementById('qt-acc').value.trim();
+  if (!acc) { toast('Enter an account ID', 'bad'); return; }
+
+  const btn = document.getElementById('btn-query');
+  btn.disabled = true; btn.textContent = 'Querying...';
+
+  try {
+    const payload = {
+      action_type: 'query_transactions',
+      account_id: acc,
+      date_from: document.getElementById('qt-from').value || undefined,
+      date_to: document.getElementById('qt-to').value || undefined,
+    };
+    const mn = document.getElementById('qt-min').value;
+    const mx = document.getElementById('qt-max').value;
+    if (mn) payload.min_amount = parseFloat(mn);
+    if (mx) payload.max_amount = parseFloat(mx);
+
+    const obs = await callStep(payload);
+    const box = document.getElementById('res-query');
+    const exp = document.getElementById('exp-query');
+
+    if (obs.action_error) {
+      box.textContent = '⚠ ' + obs.action_error + '\n\nTip: Make sure this account ID is in the "Accounts in Scope" list on the left.';
+      box.className = 'result-box show error';
+      toast('Account not found in this case', 'bad');
     } else {
-      termLog('<span style="color:var(--warn)">Episode ended. Final score: ' + ((obs.partial_score || 0) * 100).toFixed(1) + '%</span>');
-      setStatus('EPISODE ENDED', '#ffa500');
+      const txns = obs.action_result || [];
+      S.txnData = txns;
+      box.textContent = txns.length === 0
+        ? '[ ] — No transactions found. Try removing the min_amount filter.'
+        : JSON.stringify(txns, null, 2);
+      box.className = 'result-box show' + (txns.length > 0 ? ' success' : '');
+      exp.className = 'explainer show';
+
+      if (txns.length > 0) {
+        toast('✓ Found ' + txns.length + ' transaction(s)! Proceed to Step 2.', 'good');
+        document.getElementById('badge-query').className = 'ac-badge badge-done';
+        document.getElementById('badge-query').textContent = '✓ DONE';
+        setGuideStep(2);
+        document.getElementById('card-lookup').classList.add('highlighted');
+        document.getElementById('body-lookup').classList.add('open');
+      } else {
+        toast('0 transactions found. Check account ID or remove filters.', 'bad');
+      }
     }
-    state.episodeActive = false;
+  } catch(e) {
+    toast('Error: ' + e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Execute Query →';
   }
 }
 
-function updateStats(obs) {
-  document.getElementById('stat-steps').textContent = obs.steps_taken || state.stepCount;
-  document.getElementById('stat-max').textContent = obs.max_steps || state.maxSteps;
-  document.getElementById('stat-reward').textContent = state.cumulativeReward.toFixed(3);
+// ── LOOKUP ──────────────────────────────────────────────────────
+async function doLookup() {
+  if (!S.active) { toast('Start a case first!', 'bad'); return; }
+  const acc = document.getElementById('la-acc').value.trim();
+  if (!acc) { toast('Enter an account ID', 'bad'); return; }
 
-  const score = (obs.partial_score || 0) * 100;
-  document.getElementById('score-pct').textContent = score.toFixed(1) + '%';
-  document.getElementById('score-bar').style.width = Math.min(score, 100) + '%';
+  const btn = document.getElementById('btn-lookup');
+  btn.disabled = true; btn.textContent = 'Looking up...';
 
-  const steps = obs.steps_taken || state.stepCount;
-  const max = obs.max_steps || state.maxSteps;
-  const stepPct = max > 0 ? (steps / max * 100) : 0;
-  document.getElementById('steps-pct').textContent = steps + '/' + max;
-  document.getElementById('steps-bar').style.width = stepPct + '%';
+  try {
+    const obs = await callStep({ action_type: 'lookup_account', account_id: acc });
+    const box = document.getElementById('res-lookup');
+    const exp = document.getElementById('exp-lookup');
 
-  const flagged = obs.flagged_accounts || state.flaggedAccounts;
-  document.getElementById('flagged-list').textContent = flagged.length ? flagged.join(', ') : 'None';
+    if (obs.action_error) {
+      box.textContent = '⚠ ' + obs.action_error;
+      box.className = 'result-box show error';
+    } else {
+      S.profileData = obs.action_result;
+      box.textContent = JSON.stringify(obs.action_result, null, 2);
+      box.className = 'result-box show success';
+      exp.className = 'explainer show';
+      document.getElementById('badge-lookup').className = 'ac-badge badge-done';
+      document.getElementById('badge-lookup').textContent = '✓ DONE';
+      setGuideStep(3);
+      document.getElementById('card-flag').classList.add('highlighted');
+      document.getElementById('body-flag').classList.add('open');
+      toast('✓ Profile loaded! Proceed to Step 3 — Flag.', 'good');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Look Up Profile →';
+  }
 }
 
-function addLogItem(item) {
-  const li = document.createElement('li');
-  li.className = 'log-item ' + (item.reward >= 0 ? 'pos' : 'neg');
-  const r = (item.reward >= 0 ? '+' : '') + item.reward.toFixed(3);
-  li.textContent = 'Step ' + item.step + ' · ' + item.action + ' · ' + r;
-  document.getElementById('action-log').appendChild(li);
+// ── FLAG ────────────────────────────────────────────────────────
+async function doFlag() {
+  if (!S.active) { toast('Start a case first!', 'bad'); return; }
+  const acc = document.getElementById('fa-acc').value.trim();
+  if (!acc) { toast('Enter an account ID', 'bad'); return; }
+
+  const btn = document.getElementById('btn-flag');
+  btn.disabled = true; btn.textContent = 'Flagging...';
+
+  try {
+    const obs = await callStep({
+      action_type: 'flag_account',
+      account_id: acc,
+      reason: document.getElementById('fa-reason').value.trim() || 'Suspicious activity',
+    });
+    const box = document.getElementById('res-flag');
+    const exp = document.getElementById('exp-flag');
+
+    if (obs.action_error) {
+      box.textContent = '⚠ ' + obs.action_error;
+      box.className = 'result-box show error';
+    } else {
+      if (!S.flagged.includes(acc)) S.flagged.push(acc);
+      // Update chip
+      document.querySelectorAll('.acc-chip').forEach(c => {
+        if (c.textContent === acc) c.classList.add('flagged');
+      });
+      box.textContent = '✓ Account ' + acc + ' has been flagged as suspicious.';
+      box.className = 'result-box show success';
+      exp.className = 'explainer show';
+      document.getElementById('badge-flag').className = 'ac-badge badge-done';
+      document.getElementById('badge-flag').textContent = '✓ DONE';
+      setGuideStep(4);
+      document.getElementById('card-report').classList.add('highlighted');
+      document.getElementById('body-report').classList.add('open');
+      document.getElementById('flagged-display').textContent = S.flagged.join(', ');
+      toast('✓ Flagged! Now submit your report.', 'good');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = '🚩 Flag Account →';
+  }
 }
 
-// ── INIT ───────────────────────────────────────────────
-setStatus('AWAITING CONNECTION', '#5a7a99');
+// ── AUTO-FILL EVIDENCE ──────────────────────────────────────────
+function autoFillEvidence() {
+  const suspect = document.getElementById('sr-suspect').value.trim() || S.suspect || 'the suspect account';
+  const caseType = document.getElementById('sr-casetype').value;
+
+  let merchants = [], totalAmt = 0, txnCount = 0;
+  if (S.txnData && S.txnData.length) {
+    txnCount = S.txnData.length;
+    S.txnData.forEach(t => {
+      if (t.merchant && !merchants.includes(t.merchant)) merchants.push(t.merchant);
+      totalAmt += (t.amount || 0);
+    });
+  }
+
+  let evidence = '';
+  if (caseType === 'card_scheme') {
+    evidence = `${suspect} was flagged for a velocity anomaly: ${txnCount || '6+'} high-value transactions within 14 days at unlisted merchants${merchants.length ? ' including ' + merchants.slice(0,3).join(', ') : ''}. ` +
+      `${totalAmt > 0 ? 'Total transaction volume: $' + totalAmt.toFixed(2) + '. ' : ''}` +
+      `Transaction pattern is consistent with a card fraud scheme — rapid purchases across multiple non-registered merchant IDs with no legitimate business explanation. Account flagged for review.`;
+  } else if (caseType === 'layering_scheme') {
+    evidence = `${suspect} is implicated in a layering scheme. Multiple structured transactions were identified below the reporting threshold, channelled across linked accounts to obscure the origin of funds. Transaction timing and amounts suggest deliberate structuring. Associates identified through shared transaction paths.`;
+  } else {
+    evidence = `${suspect} is connected to a coordinated fraud ring. Shared device IDs and IP addresses link multiple accounts engaged in suspicious activity. Pattern analysis reveals orchestrated transactions designed to evade detection. Cross-account analysis confirms coordinated behaviour.`;
+  }
+
+  document.getElementById('sr-evidence').value = evidence;
+  toast('✨ Evidence summary auto-filled!', 'good');
+}
+
+// ── SUBMIT ──────────────────────────────────────────────────────
+async function doSubmit() {
+  if (!S.active) { toast('Start a case first!', 'bad'); return; }
+  const suspect = document.getElementById('sr-suspect').value.trim();
+  if (!suspect) { toast('Primary suspect is required', 'bad'); return; }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  try {
+    const assocStr = document.getElementById('sr-associates').value.trim();
+    const payload = {
+      action_type: 'submit_report',
+      primary_suspect: suspect,
+      case_type: document.getElementById('sr-casetype').value,
+      associates: assocStr ? assocStr.split(',').map(s=>s.trim()).filter(Boolean) : [],
+      evidence_summary: document.getElementById('sr-evidence').value.trim(),
+    };
+
+    const obs = await callStep(payload);
+    const box = document.getElementById('res-report');
+
+    const score = (obs.partial_score || 0) * 100;
+    box.textContent = (obs.action_result || '') + '\n\nFinal Score: ' + score.toFixed(1) + '%\n' + (obs.feedback || '');
+    box.className = 'result-box show ' + (score >= 70 ? 'success' : 'error');
+
+    S.active = false;
+    document.getElementById('badge-report').className = 'ac-badge badge-done';
+    document.getElementById('badge-report').textContent = '✓ SUBMITTED';
+
+    if (score >= 70) {
+      document.getElementById('win-score-text').textContent = 'Score: ' + score.toFixed(0) + '%';
+      const msgs = {
+        90: 'Perfect investigation! You nailed every step.',
+        70: 'Great work! Suspect identified and report filed.',
+        0:  'Case submitted. Review the feedback to improve next time.',
+      };
+      const key = score >= 90 ? 90 : score >= 70 ? 70 : 0;
+      document.getElementById('win-msg').textContent = msgs[key] + ' ' + (obs.feedback || '');
+      document.getElementById('win-screen').classList.add('show');
+    } else {
+      toast('Score: ' + score.toFixed(0) + '% — ' + (obs.feedback || 'Try again!'), 'bad');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'bad');
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ Submit Report & Close Case';
+  }
+}
+
+function closeWin() {
+  document.getElementById('win-screen').classList.remove('show');
+}
 </script>
 </body>
 </html>
