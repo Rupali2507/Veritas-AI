@@ -393,7 +393,7 @@ def run_task(task_id: str) -> Dict[str, Any]:
         except Exception as exc:
             print(f"[DEBUG] env.close() error: {exc}", flush=True)
 
-    score   = min(max(best_score, 0.0), 1.0)
+    score   = round(max(1e-4, min(1.0 - 1e-4, best_score)), 4)
     success = score >= SUCCESS_SCORE_THRESHOLD
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 

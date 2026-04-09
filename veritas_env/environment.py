@@ -41,6 +41,11 @@ from veritas_env.reward import (
 )
 from veritas_env.tasks import TASKS, GRADERS, TASK_ORDER
 
+# Score threshold to mark episode as solved and set done=True.
+# Set to 0.80 so all three tasks (easy~1.0, medium~0.95, hard~0.87)
+# terminate early on first good submit_report instead of running to max_steps.
+SOLVE_THRESHOLD = 0.80
+
 
 class VeritasEnvironment(Environment):
     """
@@ -48,12 +53,10 @@ class VeritasEnvironment(Environment):
     """
 
     def __init__(self, task_id=None):
-        # Safely call super().__init__() — the openenv base class may
-        # require a server context that isn't present during standalone inference.
         try:
             super().__init__()
         except Exception:
-            pass  # Safe to ignore — we don't need the server context here
+            pass
 
         self._task_id_override  = task_id
         self._episode_index     = 0
@@ -127,9 +130,25 @@ class VeritasEnvironment(Environment):
         if self._scenario is None:
             return self._error_obs("Call reset() before step().")
 
+        # If already solved, return done=True immediately — no more steps
         if self._solved:
-            return self._error_obs(
-                "Episode already complete. Call reset() to start a new case."
+            task = TASKS[self._task_id]
+            return VeritasObservation(
+                case_id           = self._scenario["case_id"],
+                task_id           = self._task_id,
+                difficulty        = task.difficulty,
+                task_description  = task.description,
+                initial_alerts    = self._scenario["alerts"],
+                accounts_in_scope = self._scenario["accounts_in_scope"],
+                action_result     = None,
+                action_error      = "Episode already complete. Call reset() to start a new case.",
+                flagged_accounts  = list(self._flagged),
+                partial_score     = self._best_score,
+                feedback          = "Episode already complete.",
+                done              = True,
+                reward            = 0.0,
+                steps_taken       = self._step_count,
+                max_steps         = task.max_steps,
             )
 
         self._step_count += 1
@@ -330,30 +349,32 @@ class VeritasEnvironment(Environment):
             already_solved     = self._solved,
         )
 
-        if partial_score >= 1.0:
+        # SOLVE_THRESHOLD=0.80 works with _clamp() ceiling of 0.9999
+        # and covers all task scores: easy~0.9999, medium~0.95, hard~0.87
+        if partial_score >= SOLVE_THRESHOLD:
             self._solved = True
             feedback = (
                 "Outstanding. Report accepted. Case closed. "
-                f"Final score: {partial_score:.2f}."
+                f"Final score: {partial_score:.4f}."
             )
-        elif partial_score >= 0.7:
+        elif partial_score >= 0.5:
             feedback = (
-                f"Good investigation. Score: {partial_score:.2f}. "
+                f"Good investigation. Score: {partial_score:.4f}. "
                 "Some elements of your report need refinement."
             )
-        elif partial_score >= 0.4:
+        elif partial_score >= 0.3:
             feedback = (
-                f"Partial credit. Score: {partial_score:.2f}. "
+                f"Partial credit. Score: {partial_score:.4f}. "
                 "Key elements of the scheme were missed."
             )
         else:
             feedback = (
-                f"Report filed. Score: {partial_score:.2f}. "
+                f"Report filed. Score: {partial_score:.4f}. "
                 "Significant elements of the scheme were not identified."
             )
 
         return (
-            f"Report submitted. Score: {partial_score:.2f}",
+            f"Report submitted. Score: {partial_score:.4f}",
             None,
             reward,
             partial_score,

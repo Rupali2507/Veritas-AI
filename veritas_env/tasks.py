@@ -52,6 +52,11 @@ EVIDENCE_KEYWORDS = [
 EVIDENCE_KEYWORD_MIN = 2
 
 
+def _clamp(score: float) -> float:
+    """Ensure score is strictly open (0, 1) as required by the validator."""
+    return round(max(0.01, min(0.99, score)), 4)
+
+
 def _evidence_quality(summary: Optional[str]) -> float:
     """Return 0.15 if summary contains enough domain keywords, else 0."""
     if not summary:
@@ -149,7 +154,7 @@ def grade_easy(
         penalty = false_count * 0.05
         score += max(0.0, 0.15 - penalty)
 
-    return round(min(score, 1.0), 4)
+    return _clamp(score)
 
 
 # ─────────────────────────────────────────────────────────
@@ -228,7 +233,7 @@ def grade_medium(
     if len(false_positives) == 0:
         score += 0.05
 
-    return round(min(score, 1.0), 4)
+    return _clamp(score)
 
 
 # ─────────────────────────────────────────────────────────
@@ -332,7 +337,7 @@ def grade_hard(
         if overlap_ratio >= 0.6:
             score += 0.05
 
-    return round(min(score, 1.0), 4)
+    return _clamp(score)
 
 
 # ─────────────────────────────────────────────────────────
