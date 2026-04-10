@@ -31,7 +31,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ── NOISE OVERLAY ── */
 body::after {
   content:'';
   position:fixed;
@@ -42,7 +41,6 @@ body::after {
   opacity:0.35;
 }
 
-/* ── HEADER ── */
 header {
   display:flex;
   align-items:center;
@@ -100,7 +98,6 @@ header {
 .conn-dot.live { background:var(--green); box-shadow:0 0 8px var(--green); animation:blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-/* ── LAYOUT ── */
 .layout {
   display:grid;
   grid-template-columns: 340px 1fr;
@@ -108,7 +105,6 @@ header {
   height:calc(100vh - 83px);
 }
 
-/* ── LEFT SIDEBAR ── */
 .sidebar {
   border-right:1px solid var(--border);
   overflow-y:auto;
@@ -131,7 +127,6 @@ header {
   font-family:'DM Mono';
 }
 
-/* Server URL */
 .url-input {
   width:100%;
   background: var(--card2);
@@ -147,7 +142,6 @@ header {
 }
 .url-input:focus { border-color:var(--gold); }
 
-/* Difficulty pills */
 .diff-pills {
   display:flex;
   gap:6px;
@@ -187,7 +181,6 @@ header {
 .start-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(79,158,255,0.5); }
 .start-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 
-/* Alert banner */
 .alert-banner {
   background: rgba(239,68,68,0.08);
   border:1px solid rgba(239,68,68,0.3);
@@ -231,7 +224,6 @@ header {
 }
 .copy-btn:hover { background:rgba(79,158,255,0.3); }
 
-/* Accounts */
 .acc-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .acc-chip {
   background:var(--card2);
@@ -248,7 +240,6 @@ header {
 .acc-chip.primary { border-color:var(--gold); color:var(--gold); background:rgba(79,158,255,0.08); }
 .acc-chip.flagged { border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.08); }
 
-/* Score panel */
 .score-panel { padding:20px; }
 .score-big {
   font-family:'Bebas Neue';
@@ -289,14 +280,12 @@ header {
 .step-dot.used { background:#4f9eff; }
 .step-dot.wasted { background:var(--red); }
 
-/* ── MAIN AREA ── */
 .main {
   display:flex;
   flex-direction:column;
   overflow:hidden;
 }
 
-/* ── STEP GUIDE ── */
 .step-guide {
   border-bottom:1px solid var(--border);
   padding:16px 24px;
@@ -335,7 +324,6 @@ header {
 
 .gs-arrow { color:var(--border); font-size:16px; flex-shrink:0; }
 
-/* ── ACTION AREA ── */
 .action-area {
   flex:1;
   overflow-y:auto;
@@ -345,7 +333,6 @@ header {
   gap:20px;
 }
 
-/* Action card */
 .action-card {
   background:var(--card);
   border:1px solid var(--border);
@@ -458,27 +445,22 @@ header {
 .exec-btn.danger:hover { background:rgba(239,68,68,0.22); }
 .exec-btn:disabled { opacity:0.3; cursor:not-allowed; transform:none !important; }
 
-/* Result box */
 .result-box {
   margin-top: 12px;
   background: #05070d;
   border: 1px solid #1f2330;
   border-radius: 10px;
   padding: 14px;
-
   font-family: 'DM Mono';
   font-size: 12px;
   line-height: 1.6;
   color: #94a3b8;
-
   height: 0;
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
   overflow: hidden;
-
   white-space: pre;
-
   display: block;
   transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1),
               height 0.4s cubic-bezier(0.4,0,0.2,1),
@@ -491,11 +473,9 @@ header {
   overflow-x: auto;
   overflow-y: auto;
 }
-.result-box.show { display:block; }
 .result-box.success { border-color:rgba(34,197,94,0.3); color:#86efac; }
 .result-box.error { border-color:rgba(239,68,68,0.3); color:#fca5a5; }
 
-/* ── WHAT HAPPENED explainer ── */
 .explainer {
   background:rgba(79,158,255,0.05);
   border:1px solid rgba(79,158,255,0.18);
@@ -510,7 +490,6 @@ header {
 .explainer.show { display:block; }
 .explainer strong { color:#4f9eff; }
 
-/* ── WIN SCREEN ── */
 .win-screen {
   display:none;
   position:fixed;
@@ -555,7 +534,6 @@ header {
 }
 .win-again:hover { transform:scale(1.04); box-shadow:0 0 24px rgba(79,158,255,0.6); }
 
-/* ── TOAST ── */
 .toast {
   position:fixed;
   bottom:24px; left:50%;
@@ -573,9 +551,6 @@ header {
 .toast.good { border-color:var(--green); color:var(--green); }
 .toast.bad { border-color:var(--red); color:#fca5a5; }
 
-
-
-/* ── GRAPH SECTION IN SIDEBAR ── */
 .graph-section {
   border-bottom: 1px solid var(--border);
   display: none;
@@ -658,7 +633,6 @@ header {
   text-overflow: ellipsis;
 }
 
-/* Node legend — compact row */
 .graph-node-legend {
   display: flex;
   gap: 10px;
@@ -681,7 +655,6 @@ header {
   flex-shrink: 0;
 }
 
-/* Investigation log inside graph section */
 .inv-log-inner {
   border-top: 1px solid var(--border);
   max-height: 130px;
@@ -725,7 +698,6 @@ header {
 .inv-detail { font-size: 9px; color: var(--muted); font-family: 'DM Mono'; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .inv-time { font-size: 8px; font-family: 'DM Mono'; color: var(--muted); flex-shrink: 0; margin-top: 2px; }
 
-/* ── FULLSCREEN GRAPH OVERLAY ── */
 .graph-overlay {
   display: none;
   position: fixed;
@@ -830,7 +802,6 @@ header {
 .gol-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .gol-line { width: 22px; height: 2px; border-radius: 1px; flex-shrink: 0; }
 
-/* scrollbar */
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
@@ -843,7 +814,6 @@ header {
 </head>
 <body>
 
-<!-- WIN SCREEN -->
 <div class="win-screen" id="win-screen">
   <div class="win-card">
     <div class="win-trophy">🏆</div>
@@ -854,10 +824,8 @@ header {
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- HEADER -->
 <header>
   <div class="logo">V</div>
   <div>
@@ -872,13 +840,12 @@ header {
 
 <div class="layout">
 
-  <!-- ── SIDEBAR ── -->
   <div class="sidebar">
 
-    <!-- Setup -->
     <div class="sidebar-section">
       <div class="section-label">① Server & Difficulty</div>
-      <input class="url-input" id="server-url" value="https://ratnesh18-veritas-ai.hf.space" placeholder="Server URL">
+      <!-- ✅ FIX 1: value="" — auto-filled by JS below based on environment -->
+      <input class="url-input" id="server-url" value="" placeholder="Detecting server URL...">
       <div class="diff-pills">
         <button class="diff-pill active" onclick="pickDiff('task_easy',this)">Easy</button>
         <button class="diff-pill" onclick="pickDiff('task_medium',this)">Medium</button>
@@ -887,7 +854,6 @@ header {
       <button class="start-btn" id="start-btn" onclick="startCase()">▶ START NEW CASE</button>
     </div>
 
-    <!-- Alert -->
     <div class="sidebar-section">
       <div class="section-label">② The Alert (Your Target)</div>
       <div class="alert-banner" id="alert-banner">
@@ -901,7 +867,6 @@ header {
       <div id="no-case-msg" style="font-size:12px;color:var(--muted);padding:8px 0;">Start a case to see the alert.</div>
     </div>
 
-    <!-- Accounts -->
     <div class="sidebar-section">
       <div class="section-label">③ Accounts (click to fill)</div>
       <div class="acc-chips" id="acc-chips">
@@ -909,7 +874,6 @@ header {
       </div>
     </div>
 
-    <!-- Score -->
     <div class="score-panel">
       <div class="section-label">Episode Score</div>
       <div class="score-big" id="score-display">—</div>
@@ -921,7 +885,6 @@ header {
       </div>
     </div>
 
-    <!-- ④ Relationship Graph -->
     <div class="graph-section" id="graph-section">
       <div class="graph-sec-header" id="graph-sec-header" onclick="toggleGraphSection()">
         <span class="graph-sec-label">④ <span>Account Graph</span></span>
@@ -951,10 +914,8 @@ header {
 
   </div>
 
-  <!-- ── MAIN ── -->
   <div class="main">
 
-    <!-- Step guide ribbon -->
     <div class="step-guide">
       <div class="guide-step">
         <div class="gs-num" id="gs1">1</div>
@@ -980,10 +941,8 @@ header {
       </div>
     </div>
 
-    <!-- Action cards -->
     <div class="action-area">
 
-      <!-- ── STEP 1: Query Transactions ── -->
       <div class="action-card" id="card-query" style="border-color:rgba(79,158,255,0.4);">
         <div class="ac-header" onclick="toggleCard('query')">
           <div class="ac-icon" style="background:rgba(79,158,255,0.1);">🔍</div>
@@ -1029,7 +988,6 @@ header {
         </div>
       </div>
 
-      <!-- ── STEP 2: Lookup Account ── -->
       <div class="action-card" id="card-lookup">
         <div class="ac-header" onclick="toggleCard('lookup')">
           <div class="ac-icon" style="background:rgba(59,130,246,0.1);">👤</div>
@@ -1054,7 +1012,6 @@ header {
         </div>
       </div>
 
-      <!-- ── STEP 3: Flag Account ── -->
       <div class="action-card" id="card-flag">
         <div class="ac-header" onclick="toggleCard('flag')">
           <div class="ac-icon" style="background:rgba(79,158,255,0.08);">🚩</div>
@@ -1083,7 +1040,6 @@ header {
         </div>
       </div>
 
-      <!-- ── STEP 4: Submit Report ── -->
       <div class="action-card" id="card-report">
         <div class="ac-header" onclick="toggleCard('report')">
           <div class="ac-icon" style="background:rgba(239,68,68,0.1);">⚡</div>
@@ -1130,39 +1086,50 @@ header {
         </div>
       </div>
 
-    </div><!-- /action-area -->
-  </div><!-- /main -->
-</div><!-- /layout -->
+    </div>
+  </div>
+</div>
 
 <script>
+// ── ✅ FIX 2: AUTO-DETECT SERVER URL — runs immediately before anything else ──
+(function() {
+  const h = window.location.hostname;
+  const isLocal = (h === 'localhost' || h === '127.0.0.1');
+  // On HF Spaces the app runs on port 7860 but is proxied via the Space URL
+  // So window.location.origin IS the correct API endpoint
+  const detectedUrl = isLocal ? 'http://localhost:7860' : window.location.origin;
+  window._detectedServerUrl = detectedUrl;
+  // Set input value immediately (DOM is ready since script is at bottom)
+  const inp = document.getElementById('server-url');
+  if (inp) inp.value = detectedUrl;
+})();
+
 // ── STATE ──────────────────────────────────────────────────────
 const S = {
-  url: 'https://ratnesh18-veritas-ai.hf.space',
+  // ✅ FIX 3: Use detected URL as default instead of hardcoded value
+  url: window._detectedServerUrl || 'https://ratnesh18-veritas-ai.hf.space',
   taskId: 'task_easy',
   active: false,
   steps: 0,
   maxSteps: 8,
   score: 0,
-  suspect: null,         // primary alert account
+  suspect: null,
   accounts: [],
   flagged: [],
-  txnData: null,         // store query results for auto-evidence
+  txnData: null,
   profileData: null,
   caseId: null,
 };
 
-// ── DIFF SELECT ─────────────────────────────────────────────────
 function pickDiff(id, el) {
   S.taskId = id;
   document.querySelectorAll('.diff-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  // Update case type hint
   const hints = { task_easy:'card_scheme', task_medium:'layering_scheme', task_hard:'coordinated_scheme' };
   document.getElementById('casetype-hint').textContent = '💡 This task = ' + hints[id];
   document.getElementById('sr-casetype').value = hints[id];
 }
 
-// ── TOAST ───────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type='') {
   const t = document.getElementById('toast');
@@ -1172,11 +1139,9 @@ function toast(msg, type='') {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── COPY SUSPECT ────────────────────────────────────────────────
 function copySuspect() {
   if (!S.suspect) return;
   navigator.clipboard.writeText(S.suspect).then(() => {
-    // Auto-fill all account fields
     ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
       document.getElementById(id).value = S.suspect;
     });
@@ -1184,41 +1149,28 @@ function copySuspect() {
   });
 }
 
-// ── TOGGLE CARD ─────────────────────────────────────────────────
 const CARD_ORDER = ['query', 'lookup', 'flag', 'report'];
 
 function openCard(name) {
-  // Close all others, open this one
   CARD_ORDER.forEach(n => {
     const body = document.getElementById('body-' + n);
-    if (n === name) {
-      body.classList.add('open');
-    } else {
-      body.classList.remove('open');
-    }
+    if (n === name) body.classList.add('open');
+    else body.classList.remove('open');
   });
 }
 
 function toggleCard(name) {
   const body = document.getElementById('body-' + name);
-  if (body.classList.contains('open')) {
-    body.classList.remove('open');
-  } else {
-    openCard(name);
-  }
+  if (body.classList.contains('open')) body.classList.remove('open');
+  else openCard(name);
 }
 
-// Advance accordion: close current step, open next step
 function advanceToNextStep(currentName) {
   const idx = CARD_ORDER.indexOf(currentName);
   const nextName = CARD_ORDER[idx + 1];
-  if (nextName) {
-    // Slight delay so user sees the success result before it slides shut
-    setTimeout(() => openCard(nextName), 600);
-  }
+  if (nextName) setTimeout(() => openCard(nextName), 600);
 }
 
-// ── STEP GUIDE ──────────────────────────────────────────────────
 function setGuideStep(step) {
   for (let i = 1; i <= 4; i++) {
     const num = document.getElementById('gs' + i);
@@ -1230,7 +1182,6 @@ function setGuideStep(step) {
   }
 }
 
-// ── UPDATE SCORE UI ─────────────────────────────────────────────
 function updateScoreUI(obs) {
   const score = (obs.partial_score || 0) * 100;
   const steps = obs.steps_taken || S.steps;
@@ -1244,7 +1195,6 @@ function updateScoreUI(obs) {
   document.getElementById('flagged-display').textContent =
     (obs.flagged_accounts || S.flagged).join(', ') || 'none';
 
-  // Step dots
   const row = document.getElementById('steps-row');
   row.innerHTML = '';
   for (let i = 0; i < max; i++) {
@@ -1254,7 +1204,16 @@ function updateScoreUI(obs) {
   }
 }
 
-// ── START CASE ──────────────────────────────────────────────────
+// ✅ FIX 4: Helper to safely set element className (avoids null crash)
+function safeSetClass(id, cls) {
+  const el = document.getElementById(id);
+  if (el) el.className = cls;
+}
+function safeSetText(id, txt) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
 async function startCase() {
   S.url = document.getElementById('server-url').value.trim().replace(/\/$/,'');
   const btn = document.getElementById('start-btn');
@@ -1267,7 +1226,7 @@ async function startCase() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ task_id: S.taskId }),
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' — check server URL');
     const data = await r.json();
     const obs = data.observation || data;
     S.caseId = obs.case_id;
@@ -1279,24 +1238,20 @@ async function startCase() {
     S.flagged = [];
     S.active = true;
 
-    // Extract primary suspect from initial alerts
     const alerts = obs.initial_alerts || [];
     S.accounts = obs.accounts_in_scope || [];
 
-    // Find the account mentioned in the first alert
     S.suspect = null;
     if (alerts.length > 0) {
       const alertObj = alerts[0];
       const alertText = typeof alertObj === 'string' ? alertObj :
         (alertObj.description || alertObj.account_id || JSON.stringify(alertObj));
-      // Try to extract ACC-XXXX pattern
       const match = alertText.match(/ACC-\d+/);
       if (match) S.suspect = match[0];
       else if (alertObj.account_id) S.suspect = alertObj.account_id;
     }
     if (!S.suspect && S.accounts.length) S.suspect = S.accounts[0];
 
-    // Update sidebar
     document.getElementById('alert-banner').classList.add('show');
     document.getElementById('no-case-msg').style.display = 'none';
     const alertText = alerts.length
@@ -1305,7 +1260,6 @@ async function startCase() {
     document.getElementById('alert-text').textContent = alertText;
     document.getElementById('suspect-display').textContent = S.suspect || '?';
 
-    // Account chips
     const chips = document.getElementById('acc-chips');
     chips.innerHTML = '';
     S.accounts.forEach(acc => {
@@ -1316,42 +1270,36 @@ async function startCase() {
       chips.appendChild(c);
     });
 
-    // Auto-fill suspect into fields
     if (S.suspect) {
       ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
         document.getElementById(id).value = S.suspect;
       });
     }
 
-    // Set case type
     const caseTypes = { task_easy:'card_scheme', task_medium:'layering_scheme', task_hard:'coordinated_scheme' };
     document.getElementById('sr-casetype').value = caseTypes[S.taskId] || 'card_scheme';
 
     updateScoreUI(obs);
     setGuideStep(1);
 
-    // Highlight step 1
     document.getElementById('card-query').classList.add('highlighted');
     openCard('query');
 
-    // Reset graph
     stopGraph();
     document.getElementById('graph-section').classList.remove('show');
 
-    // Reset result boxes and highlighted cards (null-safe)
+    // ✅ FIX 5: All badge/card resets use null-safe helpers
     ['query','lookup','flag','report'].forEach(n => {
-      const res = document.getElementById('res-' + n);
-      const exp = document.getElementById('exp-' + n);
-      const badge = document.getElementById('badge-' + n);
+      safeSetClass('res-' + n, 'result-box');
+      safeSetClass('exp-' + n, 'explainer');
+      safeSetClass('badge-' + n, 'ac-badge badge-optional');
       const card = document.getElementById('card-' + n);
-      if (res) res.className = 'result-box';
-      if (exp) exp.className = 'explainer';
-      if (badge) badge.className = 'ac-badge badge-optional';
       if (card) card.classList.remove('highlighted');
     });
-    document.getElementById('badge-query').className = 'ac-badge badge-do-first';
-    document.getElementById('badge-query').textContent = 'DO THIS FIRST';
-    document.getElementById('badge-report').className = 'ac-badge badge-final';
+    safeSetClass('badge-query', 'ac-badge badge-do-first');
+    safeSetText('badge-query', 'DO THIS FIRST');
+    safeSetClass('badge-report', 'ac-badge badge-final');
+    safeSetText('badge-report', 'CLOSES CASE');
 
     setConn(true);
     graphReset(S.accounts, S.suspect);
@@ -1378,7 +1326,6 @@ function setConn(on) {
   document.getElementById('conn-text').textContent = on ? 'CONNECTED · CASE OPEN' : 'NOT CONNECTED';
 }
 
-// ── STEP ────────────────────────────────────────────────────────
 async function callStep(payload) {
   const r = await fetch(S.url + '/step', {
     method:'POST',
@@ -1392,7 +1339,6 @@ async function callStep(payload) {
   return obs;
 }
 
-// ── QUERY ───────────────────────────────────────────────────────
 async function doQuery() {
   if (!S.active) { toast('Start a case first!', 'bad'); return; }
   const acc = document.getElementById('qt-acc').value.trim();
@@ -1433,10 +1379,11 @@ async function doQuery() {
       if (txns.length > 0) {
         toast('✓ Found ' + txns.length + ' transaction(s)! Proceed to Step 2.', 'good');
         graphMarkQueried(acc, txns);
-        document.getElementById('badge-query').className = 'ac-badge badge-done';
-        document.getElementById('badge-query').textContent = '✓ DONE';
+        safeSetClass('badge-query', 'ac-badge badge-done');
+        safeSetText('badge-query', '✓ DONE');
         setGuideStep(2);
-        document.getElementById('card-lookup').classList.add('highlighted');
+        const cl = document.getElementById('card-lookup');
+        if (cl) cl.classList.add('highlighted');
         advanceToNextStep('query');
       } else {
         toast('0 transactions found. Check account ID or remove filters.', 'bad');
@@ -1449,7 +1396,6 @@ async function doQuery() {
   }
 }
 
-// ── LOOKUP ──────────────────────────────────────────────────────
 async function doLookup() {
   if (!S.active) { toast('Start a case first!', 'bad'); return; }
   const acc = document.getElementById('la-acc').value.trim();
@@ -1471,10 +1417,11 @@ async function doLookup() {
       box.textContent = JSON.stringify(obs.action_result, null, 2);
       box.className = 'result-box show success';
       exp.className = 'explainer show';
-      document.getElementById('badge-lookup').className = 'ac-badge badge-done';
-      document.getElementById('badge-lookup').textContent = '✓ DONE';
+      safeSetClass('badge-lookup', 'ac-badge badge-done');
+      safeSetText('badge-lookup', '✓ DONE');
       setGuideStep(3);
-      document.getElementById('card-flag').classList.add('highlighted');
+      const cf = document.getElementById('card-flag');
+      if (cf) cf.classList.add('highlighted');
       advanceToNextStep('lookup');
       graphMarkProfiled(acc, obs.action_result);
       toast('✓ Profile loaded! Proceed to Step 3 — Flag.', 'good');
@@ -1486,7 +1433,6 @@ async function doLookup() {
   }
 }
 
-// ── FLAG ────────────────────────────────────────────────────────
 async function doFlag() {
   if (!S.active) { toast('Start a case first!', 'bad'); return; }
   const acc = document.getElementById('fa-acc').value.trim();
@@ -1509,17 +1455,17 @@ async function doFlag() {
       box.className = 'result-box show error';
     } else {
       if (!S.flagged.includes(acc)) S.flagged.push(acc);
-      // Update chip
       document.querySelectorAll('.acc-chip').forEach(c => {
         if (c.textContent === acc) c.classList.add('flagged');
       });
       box.textContent = '✓ Account ' + acc + ' has been flagged as suspicious.';
       box.className = 'result-box show success';
       exp.className = 'explainer show';
-      document.getElementById('badge-flag').className = 'ac-badge badge-done';
-      document.getElementById('badge-flag').textContent = '✓ DONE';
+      safeSetClass('badge-flag', 'ac-badge badge-done');
+      safeSetText('badge-flag', '✓ DONE');
       setGuideStep(4);
-      document.getElementById('card-report').classList.add('highlighted');
+      const cr = document.getElementById('card-report');
+      if (cr) cr.classList.add('highlighted');
       advanceToNextStep('flag');
       document.getElementById('flagged-display').textContent = S.flagged.join(', ');
       graphMarkFlagged(acc);
@@ -1532,7 +1478,6 @@ async function doFlag() {
   }
 }
 
-// ── AUTO-FILL EVIDENCE ──────────────────────────────────────────
 function autoFillEvidence() {
   const suspect = document.getElementById('sr-suspect').value.trim() || S.suspect || 'the suspect account';
   const caseType = document.getElementById('sr-casetype').value;
@@ -1561,7 +1506,6 @@ function autoFillEvidence() {
   toast('✨ Evidence summary auto-filled!', 'good');
 }
 
-// ── SUBMIT ──────────────────────────────────────────────────────
 async function doSubmit() {
   if (!S.active) { toast('Start a case first!', 'bad'); return; }
   const suspect = document.getElementById('sr-suspect').value.trim();
@@ -1588,8 +1532,8 @@ async function doSubmit() {
     box.className = 'result-box show ' + (score >= 70 ? 'success' : 'error');
 
     S.active = false;
-    document.getElementById('badge-report').className = 'ac-badge badge-done';
-    document.getElementById('badge-report').textContent = '✓ SUBMITTED';
+    safeSetClass('badge-report', 'ac-badge badge-done');
+    safeSetText('badge-report', '✓ SUBMITTED');
 
     if (score >= 70) {
       document.getElementById('win-score-text').textContent = 'Score: ' + score.toFixed(0) + '%';
@@ -1615,19 +1559,13 @@ function closeWin() {
   document.getElementById('win-screen').classList.remove('show');
 }
 
-// ── RELATIONSHIP GRAPH ENGINE ────────────────────────────────
+// ── GRAPH ENGINE ─────────────────────────────────────────────────
 const G = {
-  nodes: {},
-  edges: [],
-  log: [],
-  animFrame: null,
-  fsDragging: null, sbDragging: null,
-  suspect: null,
-  _pulse: 0,
-  _fsMode: false,
+  nodes: {}, edges: [], log: [],
+  animFrame: null, suspect: null,
+  _pulse: 0, _fsMode: false,
 };
 
-// ── TOGGLE SIDEBAR GRAPH ─────────────────────────────────────────
 function toggleGraphSection() {
   const body = document.getElementById('graph-body');
   const chev = document.getElementById('graph-chevron');
@@ -1645,28 +1583,20 @@ function resizeSidebarCanvas() {
   if (c.width !== W) { c.width = W; c.height = 200; }
 }
 
-// ── FULLSCREEN ───────────────────────────────────────────────────
 function openGraphFullscreen() {
   const overlay = document.getElementById('graph-overlay');
   overlay.classList.add('show');
   G._fsMode = true;
   document.addEventListener('keydown', _escClose);
-
-  // Size the FS canvas
   const cfs = document.getElementById('graph-canvas-fs');
   cfs.width  = cfs.offsetWidth  || window.innerWidth - 280;
   cfs.height = cfs.offsetHeight || window.innerHeight - 120;
-
-  // Mirror log into overlay log
   renderOverlayLog();
-
-  // Update meta
   const meta = document.getElementById('graph-overlay-meta');
   if (meta) {
     const n = Object.keys(G.nodes).length;
     meta.textContent = n + ' accounts · ' + G.edges.length + ' connections · ' + G.log.length + ' actions logged';
   }
-
   setupFsInteraction();
 }
 
@@ -1677,18 +1607,13 @@ function closeGraphFullscreen() {
 }
 function _escClose(e) { if (e.key === 'Escape') closeGraphFullscreen(); }
 
-// ── INIT ─────────────────────────────────────────────────────────
 function graphReset(accounts, suspectId) {
   cancelAnimationFrame(G.animFrame);
-  G.nodes = {};
-  G.edges = [];
-  G.log = [];
-  G.suspect = suspectId;
-  G._pulse = 0;
+  G.nodes = {}; G.edges = []; G.log = [];
+  G.suspect = suspectId; G._pulse = 0;
 
   document.getElementById('graph-section').classList.add('show');
 
-  // Size sidebar canvas
   const c = document.getElementById('graph-canvas');
   c.width  = c.offsetWidth || c.parentElement.offsetWidth || 300;
   c.height = 200;
@@ -1704,7 +1629,6 @@ function graphReset(accounts, suspectId) {
       id: acc,
       x: cx + r * Math.cos(angle),
       y: cy + r * Math.sin(angle),
-      // fullscreen coords — scaled up proportionally
       fsx: (cx + r * Math.cos(angle)) * 2.8,
       fsy: (cy + r * Math.sin(angle)) * 2.0,
       state: acc === suspectId ? 'suspect' : 'normal',
@@ -1713,11 +1637,8 @@ function graphReset(accounts, suspectId) {
     };
   });
 
-  // Initial scope edges
   accounts.forEach(acc => {
-    if (acc !== suspectId) {
-      G.edges.push({ from: suspectId, to: acc, weight: 1, type: 'scope' });
-    }
+    if (acc !== suspectId) G.edges.push({ from: suspectId, to: acc, weight: 1, type: 'scope' });
   });
 
   graphLog('🗂️', 'Case opened', accounts.length + ' accounts in scope');
@@ -1727,7 +1648,6 @@ function graphReset(accounts, suspectId) {
   graphDraw();
 }
 
-// ── LOG ──────────────────────────────────────────────────────────
 function graphLog(icon, action, detail) {
   const now = new Date();
   const time = now.toTimeString().slice(0,5);
@@ -1759,13 +1679,11 @@ function renderOverlayLog() {
   if (el) el.innerHTML = G.log.map(logEntryHTML).join('');
 }
 
-// ── MARK QUERIED ─────────────────────────────────────────────────
 function graphMarkQueried(accountId, txns) {
   if (!G.nodes[accountId]) return;
   const node = G.nodes[accountId];
   node.queried = true;
   if (node.state === 'normal') node.state = 'queried';
-
   if (txns && txns.length) {
     node.totalTxns += txns.length;
     txns.forEach(t => {
@@ -1783,7 +1701,6 @@ function graphMarkQueried(accountId, txns) {
   graphStatus('Queried ' + accountId);
 }
 
-// ── MARK PROFILED ────────────────────────────────────────────────
 function graphMarkProfiled(accountId, profile) {
   if (!G.nodes[accountId]) return;
   const node = G.nodes[accountId];
@@ -1796,31 +1713,25 @@ function graphMarkProfiled(accountId, profile) {
   graphStatus('Profile loaded for ' + accountId);
 }
 
-// ── MARK FLAGGED ─────────────────────────────────────────────────
 function graphMarkFlagged(accountId) {
   if (!G.nodes[accountId]) return;
   G.nodes[accountId].state = 'flagged';
   G.edges.forEach(e => {
-    if ((e.from === accountId || e.to === accountId) && e.type === 'scope')
-      e.type = 'confirmed';
+    if ((e.from === accountId || e.to === accountId) && e.type === 'scope') e.type = 'confirmed';
   });
   graphLog('🚩', 'Flagged ' + accountId, 'Marked suspicious — links confirmed');
   graphStatus('🚩 ' + accountId + ' flagged');
 }
 
-// ── INFER EDGES ──────────────────────────────────────────────────
 function inferEdgesFromTxns(fromId, txns) {
   if (!txns || !txns.length) return;
-  let added = 0;
   txns.forEach(t => {
     [t.to_account, t.counterparty, t.recipient, t.receiver, t.destination_account]
       .filter(v => v && v !== fromId && G.nodes[v])
-      .forEach(to => { addEdge(fromId, to, t.amount || 1, 'transaction'); added++; });
-
+      .forEach(to => addEdge(fromId, to, t.amount || 1, 'transaction'));
     const mid = t.merchant_id || t.merchant;
-    if (mid && typeof mid === 'string' && mid.startsWith('ACC-') && G.nodes[mid] && mid !== fromId) {
-      addEdge(fromId, mid, t.amount || 1, 'merchant'); added++;
-    }
+    if (mid && typeof mid === 'string' && mid.startsWith('ACC-') && G.nodes[mid] && mid !== fromId)
+      addEdge(fromId, mid, t.amount || 1, 'merchant');
   });
   if (fromId !== G.suspect) upgradeEdge(G.suspect, fromId, 'investigated');
 }
@@ -1836,13 +1747,11 @@ function upgradeEdge(from, to, newType) {
   else G.edges.push({ from, to, weight:1, type:newType });
 }
 
-// ── GRAPH STATUS BAR ─────────────────────────────────────────────
 function graphStatus(msg) {
   const el = document.getElementById('graph-status');
   if (el) el.textContent = msg;
 }
 
-// ── STYLES ───────────────────────────────────────────────────────
 function edgeStyle(type) {
   switch(type) {
     case 'transaction':  return { color:'rgba(79,158,255,0.9)',  dash:[],    width:2.5, arrow:true };
@@ -1862,16 +1771,13 @@ function nodeColor(state) {
   }
 }
 
-// ── DRAW ─────────────────────────────────────────────────────────
 function drawOnCanvas(canvas, useFsCoords) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   G._pulse = (G._pulse + 0.032) % (Math.PI * 2);
-
   ctx.clearRect(0, 0, W, H);
 
-  // Grid dots
   ctx.fillStyle = 'rgba(79,158,255,0.045)';
   for (let x = 0; x < W; x += 22) for (let y = 0; y < H; y += 22) {
     ctx.beginPath(); ctx.arc(x,y,0.8,0,Math.PI*2); ctx.fill();
@@ -1880,13 +1786,11 @@ function drawOnCanvas(canvas, useFsCoords) {
   function nx(node) { return useFsCoords ? node.fsx : node.x; }
   function ny(node) { return useFsCoords ? node.fsy : node.y; }
 
-  // Edges
   G.edges.forEach(edge => {
     const a = G.nodes[edge.from], b = G.nodes[edge.to];
     if (!a || !b) return;
     const st = edgeStyle(edge.type);
     const ax = nx(a), ay = ny(a), bx = nx(b), by = ny(b);
-
     ctx.save();
     ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
     ctx.strokeStyle = st.color;
@@ -1894,7 +1798,6 @@ function drawOnCanvas(canvas, useFsCoords) {
     ctx.setLineDash(st.dash);
     if (st.dash.length) ctx.lineDashOffset = -G._pulse * 5;
     ctx.stroke(); ctx.setLineDash([]);
-
     if (st.arrow) {
       const cb = nodeColor(G.nodes[edge.to].state);
       const ang = Math.atan2(by - ay, bx - ax);
@@ -1908,42 +1811,25 @@ function drawOnCanvas(canvas, useFsCoords) {
     ctx.restore();
   });
 
-  // Nodes
   Object.values(G.nodes).forEach(node => {
     const c = nodeColor(node.state);
     const pulse = (node.state==='suspect'||node.state==='flagged') ? Math.sin(G._pulse)*2.5 : 0;
     const r = c.r + pulse;
     const nx_ = nx(node), ny_ = ny(node);
-
-    // Glow
     const grd = ctx.createRadialGradient(nx_,ny_,0, nx_,ny_,r+12);
     grd.addColorStop(0, c.glow); grd.addColorStop(1,'transparent');
     ctx.beginPath(); ctx.arc(nx_,ny_,r+12,0,Math.PI*2);
     ctx.fillStyle = grd; ctx.fill();
-
-    // Body
     ctx.beginPath(); ctx.arc(nx_,ny_,r,0,Math.PI*2);
     ctx.fillStyle = c.fill; ctx.fill();
     ctx.strokeStyle = c.stroke; ctx.lineWidth = 1.6; ctx.stroke();
-
-    // Inner label
     ctx.font = 'bold 8px DM Mono,monospace';
     ctx.fillStyle = '#e8f0ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(node.id.replace('ACC-','#'), nx_, ny_);
-
-    // State badge
     const badge = node.state==='suspect'?'⚠':node.state==='flagged'?'🚩':node.state==='queried'?'✓':node.state==='profiled'?'👤':'';
-    if (badge) {
-      ctx.font = '9px sans-serif';
-      ctx.fillText(badge, nx_, ny_ + r + 9);
-    }
-
-    // Account ID below
-    ctx.font = '7px DM Mono,monospace';
-    ctx.fillStyle = c.stroke;
+    if (badge) { ctx.font = '9px sans-serif'; ctx.fillText(badge, nx_, ny_ + r + 9); }
+    ctx.font = '7px DM Mono,monospace'; ctx.fillStyle = c.stroke;
     ctx.fillText(node.id, nx_, ny_ + r + (badge ? 19 : 9));
-
-    // Txn count badge
     if (node.totalTxns > 0) {
       ctx.beginPath(); ctx.arc(nx_ + r - 1, ny_ - r + 1, 6, 0, Math.PI*2);
       ctx.fillStyle = '#22c55e'; ctx.fill();
@@ -1956,14 +1842,11 @@ function drawOnCanvas(canvas, useFsCoords) {
 function graphDraw() {
   const sbCanvas = document.getElementById('graph-canvas');
   const fsCanvas = G._fsMode ? document.getElementById('graph-canvas-fs') : null;
-
   drawOnCanvas(sbCanvas, false);
   if (fsCanvas && fsCanvas.offsetWidth > 0) drawOnCanvas(fsCanvas, true);
-
   G.animFrame = requestAnimationFrame(graphDraw);
 }
 
-// ── SIDEBAR INTERACTION ──────────────────────────────────────────
 function setupSidebarInteraction() {
   const canvas = document.getElementById('graph-canvas');
   if (!canvas || canvas._sbInit) return;
@@ -2012,10 +1895,7 @@ function attachInteraction(canvas, useFsCoords) {
     }
   });
   canvas.addEventListener('mousemove', e => {
-    if (!dragging) {
-      canvas.style.cursor = hitNode(getPos(e)) ? 'pointer' : 'grab';
-      return;
-    }
+    if (!dragging) { canvas.style.cursor = hitNode(getPos(e)) ? 'pointer' : 'grab'; return; }
     didDrag = true; canvas.style.cursor = 'grabbing';
     const p = getPos(e);
     setXY(dragging, p.x - offX, p.y - offY);
@@ -2037,8 +1917,8 @@ function attachInteraction(canvas, useFsCoords) {
 function stopGraph() {
   cancelAnimationFrame(G.animFrame);
 }
-
 </script>
+
 <!-- FULLSCREEN GRAPH OVERLAY -->
 <div class="graph-overlay" id="graph-overlay">
   <div class="graph-overlay-header">
