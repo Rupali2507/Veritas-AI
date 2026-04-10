@@ -573,6 +573,263 @@ header {
 .toast.good { border-color:var(--green); color:var(--green); }
 .toast.bad { border-color:var(--red); color:#fca5a5; }
 
+
+
+/* ── GRAPH SECTION IN SIDEBAR ── */
+.graph-section {
+  border-bottom: 1px solid var(--border);
+  display: none;
+  flex-direction: column;
+}
+.graph-section.show { display: flex; }
+
+.graph-sec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 20px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s;
+}
+.graph-sec-header:hover { background: rgba(79,158,255,0.04); }
+.graph-sec-header.open { border-bottom-color: var(--border); }
+
+.graph-sec-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  font-family: 'DM Mono';
+}
+.graph-sec-label span { color: #4f9eff; }
+
+.graph-sec-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-btn {
+  background: rgba(79,158,255,0.1);
+  border: 1px solid rgba(79,158,255,0.25);
+  border-radius: 5px;
+  color: #4f9eff;
+  font-family: 'DM Mono';
+  font-size: 9px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.graph-btn:hover { background: rgba(79,158,255,0.22); }
+
+.graph-chevron {
+  color: var(--muted);
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+.graph-chevron.open { transform: rotate(180deg); }
+
+.graph-body {
+  display: none;
+  flex-direction: column;
+}
+.graph-body.open { display: flex; }
+
+#graph-canvas {
+  width: 100%;
+  height: 200px;
+  display: block;
+  cursor: grab;
+}
+#graph-canvas:active { cursor: grabbing; }
+
+.graph-status-bar {
+  padding: 6px 14px;
+  font-size: 9px;
+  color: var(--muted);
+  font-family: 'DM Mono';
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.15);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Node legend — compact row */
+.graph-node-legend {
+  display: flex;
+  gap: 10px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.1);
+  flex-wrap: wrap;
+}
+.gnl-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--muted);
+  font-family: 'DM Mono';
+}
+.gnl-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Investigation log inside graph section */
+.inv-log-inner {
+  border-top: 1px solid var(--border);
+  max-height: 130px;
+  overflow-y: auto;
+}
+.inv-log-inner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: rgba(34,197,94,0.03);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+.inv-log-inner-title {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #22c55e;
+  font-family: 'DM Mono';
+}
+.inv-log-inner-count {
+  font-size: 9px;
+  font-family: 'DM Mono';
+  color: var(--muted);
+}
+.inv-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 14px;
+  border-bottom: 1px solid rgba(30,45,74,0.4);
+  transition: background 0.1s;
+}
+.inv-entry:hover { background: rgba(79,158,255,0.03); }
+.inv-entry:first-child { background: rgba(79,158,255,0.05); border-left: 2px solid #4f9eff; }
+.inv-icon { font-size: 10px; flex-shrink: 0; width: 14px; text-align: center; margin-top: 1px; }
+.inv-body { flex: 1; min-width: 0; }
+.inv-action { font-size: 10px; font-weight: 600; color: var(--text); font-family: 'DM Mono'; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv-detail { font-size: 9px; color: var(--muted); font-family: 'DM Mono'; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv-time { font-size: 8px; font-family: 'DM Mono'; color: var(--muted); flex-shrink: 0; margin-top: 2px; }
+
+/* ── FULLSCREEN GRAPH OVERLAY ── */
+.graph-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,10,18,0.97);
+  z-index: 400;
+  flex-direction: column;
+  animation: fadeIn 0.2s ease;
+}
+.graph-overlay.show { display: flex; }
+
+.graph-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+}
+.graph-overlay-title {
+  font-family: 'Bebas Neue';
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #4f9eff;
+}
+.graph-overlay-meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono';
+  margin-top: 2px;
+}
+.graph-overlay-close {
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  font-family: 'DM Mono';
+  font-size: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.graph-overlay-close:hover { background: rgba(239,68,68,0.25); }
+
+.graph-overlay-body {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+}
+
+#graph-canvas-fs {
+  flex: 1;
+  display: block;
+  cursor: grab;
+  min-width: 0;
+}
+#graph-canvas-fs:active { cursor: grabbing; }
+
+.graph-overlay-log {
+  width: 280px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.graph-overlay-log-title {
+  padding: 12px 16px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #22c55e;
+  font-family: 'DM Mono';
+  border-bottom: 1px solid var(--border);
+  background: rgba(34,197,94,0.03);
+  flex-shrink: 0;
+}
+#graph-overlay-log-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.graph-overlay-legend {
+  display: flex;
+  gap: 16px;
+  padding: 10px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.gol-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'DM Mono';
+}
+.gol-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.gol-line { width: 22px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
 /* scrollbar */
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -661,6 +918,34 @@ header {
       <div class="steps-row" id="steps-row"></div>
       <div style="margin-top:14px; font-size:11px; color:var(--muted); font-family:'DM Mono';">
         Flagged: <span id="flagged-display" style="color:var(--green);">none</span>
+      </div>
+    </div>
+
+    <!-- ④ Relationship Graph -->
+    <div class="graph-section" id="graph-section">
+      <div class="graph-sec-header" id="graph-sec-header" onclick="toggleGraphSection()">
+        <span class="graph-sec-label">④ <span>Account Graph</span></span>
+        <div class="graph-sec-actions">
+          <button class="graph-btn" onclick="event.stopPropagation(); openGraphFullscreen()">⛶ Fullscreen</button>
+          <span class="graph-chevron" id="graph-chevron">▼</span>
+        </div>
+      </div>
+      <div class="graph-body open" id="graph-body">
+        <div class="graph-node-legend">
+          <div class="gnl-item"><span class="gnl-dot" style="background:#ef4444;box-shadow:0 0 5px #ef444466;"></span>Suspect</div>
+          <div class="gnl-item"><span class="gnl-dot" style="background:#f5a623;box-shadow:0 0 5px #f5a62366;"></span>Flagged</div>
+          <div class="gnl-item"><span class="gnl-dot" style="background:#22c55e;box-shadow:0 0 5px #22c55e66;"></span>Queried</div>
+          <div class="gnl-item"><span class="gnl-dot" style="background:#4f9eff;box-shadow:0 0 5px #4f9eff44;"></span>Normal</div>
+        </div>
+        <canvas id="graph-canvas"></canvas>
+        <div class="graph-status-bar" id="graph-status">Start a case to see the graph</div>
+        <div class="inv-log-inner" id="inv-log-inner">
+          <div class="inv-log-inner-header">
+            <span class="inv-log-inner-title">📋 Investigation Log</span>
+            <span class="inv-log-inner-count" id="inv-log-count">0 actions</span>
+          </div>
+          <div id="inv-log-list"></div>
+        </div>
       </div>
     </div>
 
@@ -1049,6 +1334,10 @@ async function startCase() {
     document.getElementById('card-query').classList.add('highlighted');
     openCard('query');
 
+    // Reset graph
+    stopGraph();
+    document.getElementById('graph-section').classList.remove('show');
+
     // Reset result boxes and highlighted cards (null-safe)
     ['query','lookup','flag','report'].forEach(n => {
       const res = document.getElementById('res-' + n);
@@ -1065,6 +1354,7 @@ async function startCase() {
     document.getElementById('badge-report').className = 'ac-badge badge-final';
 
     setConn(true);
+    graphReset(S.accounts, S.suspect);
     toast('✓ Case opened! Suspect auto-filled.', 'good');
 
   } catch(e) {
@@ -1142,6 +1432,7 @@ async function doQuery() {
 
       if (txns.length > 0) {
         toast('✓ Found ' + txns.length + ' transaction(s)! Proceed to Step 2.', 'good');
+        graphMarkQueried(acc, txns);
         document.getElementById('badge-query').className = 'ac-badge badge-done';
         document.getElementById('badge-query').textContent = '✓ DONE';
         setGuideStep(2);
@@ -1185,6 +1476,7 @@ async function doLookup() {
       setGuideStep(3);
       document.getElementById('card-flag').classList.add('highlighted');
       advanceToNextStep('lookup');
+      graphMarkProfiled(acc, obs.action_result);
       toast('✓ Profile loaded! Proceed to Step 3 — Flag.', 'good');
     }
   } catch(e) {
@@ -1230,6 +1522,7 @@ async function doFlag() {
       document.getElementById('card-report').classList.add('highlighted');
       advanceToNextStep('flag');
       document.getElementById('flagged-display').textContent = S.flagged.join(', ');
+      graphMarkFlagged(acc);
       toast('✓ Flagged! Now submit your report.', 'good');
     }
   } catch(e) {
@@ -1321,6 +1614,461 @@ async function doSubmit() {
 function closeWin() {
   document.getElementById('win-screen').classList.remove('show');
 }
+
+// ── RELATIONSHIP GRAPH ENGINE ────────────────────────────────
+const G = {
+  nodes: {},
+  edges: [],
+  log: [],
+  animFrame: null,
+  fsDragging: null, sbDragging: null,
+  suspect: null,
+  _pulse: 0,
+  _fsMode: false,
+};
+
+// ── TOGGLE SIDEBAR GRAPH ─────────────────────────────────────────
+function toggleGraphSection() {
+  const body = document.getElementById('graph-body');
+  const chev = document.getElementById('graph-chevron');
+  const hdr  = document.getElementById('graph-sec-header');
+  const open = body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', open);
+  if (hdr)  hdr.classList.toggle('open', open);
+  if (open) resizeSidebarCanvas();
+}
+
+function resizeSidebarCanvas() {
+  const c = document.getElementById('graph-canvas');
+  if (!c) return;
+  const W = c.offsetWidth || c.parentElement.offsetWidth || 300;
+  if (c.width !== W) { c.width = W; c.height = 200; }
+}
+
+// ── FULLSCREEN ───────────────────────────────────────────────────
+function openGraphFullscreen() {
+  const overlay = document.getElementById('graph-overlay');
+  overlay.classList.add('show');
+  G._fsMode = true;
+  document.addEventListener('keydown', _escClose);
+
+  // Size the FS canvas
+  const cfs = document.getElementById('graph-canvas-fs');
+  cfs.width  = cfs.offsetWidth  || window.innerWidth - 280;
+  cfs.height = cfs.offsetHeight || window.innerHeight - 120;
+
+  // Mirror log into overlay log
+  renderOverlayLog();
+
+  // Update meta
+  const meta = document.getElementById('graph-overlay-meta');
+  if (meta) {
+    const n = Object.keys(G.nodes).length;
+    meta.textContent = n + ' accounts · ' + G.edges.length + ' connections · ' + G.log.length + ' actions logged';
+  }
+
+  setupFsInteraction();
+}
+
+function closeGraphFullscreen() {
+  document.getElementById('graph-overlay').classList.remove('show');
+  G._fsMode = false;
+  document.removeEventListener('keydown', _escClose);
+}
+function _escClose(e) { if (e.key === 'Escape') closeGraphFullscreen(); }
+
+// ── INIT ─────────────────────────────────────────────────────────
+function graphReset(accounts, suspectId) {
+  cancelAnimationFrame(G.animFrame);
+  G.nodes = {};
+  G.edges = [];
+  G.log = [];
+  G.suspect = suspectId;
+  G._pulse = 0;
+
+  document.getElementById('graph-section').classList.add('show');
+
+  // Size sidebar canvas
+  const c = document.getElementById('graph-canvas');
+  c.width  = c.offsetWidth || c.parentElement.offsetWidth || 300;
+  c.height = 200;
+
+  const W = c.width, H = c.height;
+  const cx = W / 2, cy = H / 2;
+  const count = accounts.length;
+
+  accounts.forEach((acc, i) => {
+    const angle = (2 * Math.PI * i / count) - Math.PI / 2;
+    const r = Math.min(W, H) * 0.32;
+    G.nodes[acc] = {
+      id: acc,
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+      // fullscreen coords — scaled up proportionally
+      fsx: (cx + r * Math.cos(angle)) * 2.8,
+      fsy: (cy + r * Math.sin(angle)) * 2.0,
+      state: acc === suspectId ? 'suspect' : 'normal',
+      queried: false, profiled: false,
+      totalTxns: 0, totalAmt: 0, merchants: [],
+    };
+  });
+
+  // Initial scope edges
+  accounts.forEach(acc => {
+    if (acc !== suspectId) {
+      G.edges.push({ from: suspectId, to: acc, weight: 1, type: 'scope' });
+    }
+  });
+
+  graphLog('🗂️', 'Case opened', accounts.length + ' accounts in scope');
+  graphLog('🎯', 'Primary alert', suspectId + ' flagged by system');
+
+  setupSidebarInteraction();
+  graphDraw();
+}
+
+// ── LOG ──────────────────────────────────────────────────────────
+function graphLog(icon, action, detail) {
+  const now = new Date();
+  const time = now.toTimeString().slice(0,5);
+  G.log.unshift({ icon, action, detail, time });
+  if (G.log.length > 30) G.log.pop();
+  renderLog();
+}
+
+function logEntryHTML(e) {
+  return `<div class="inv-entry">
+    <span class="inv-icon">${e.icon}</span>
+    <div class="inv-body">
+      <span class="inv-action">${e.action}</span>
+      <span class="inv-detail">${e.detail}</span>
+    </div>
+    <span class="inv-time">${e.time}</span>
+  </div>`;
+}
+
+function renderLog() {
+  const el = document.getElementById('inv-log-list');
+  const cnt = document.getElementById('inv-log-count');
+  if (el) el.innerHTML = G.log.map(logEntryHTML).join('');
+  if (cnt) cnt.textContent = G.log.length + ' action' + (G.log.length !== 1 ? 's' : '');
+}
+
+function renderOverlayLog() {
+  const el = document.getElementById('graph-overlay-log-list');
+  if (el) el.innerHTML = G.log.map(logEntryHTML).join('');
+}
+
+// ── MARK QUERIED ─────────────────────────────────────────────────
+function graphMarkQueried(accountId, txns) {
+  if (!G.nodes[accountId]) return;
+  const node = G.nodes[accountId];
+  node.queried = true;
+  if (node.state === 'normal') node.state = 'queried';
+
+  if (txns && txns.length) {
+    node.totalTxns += txns.length;
+    txns.forEach(t => {
+      node.totalAmt += (t.amount || 0);
+      const m = t.merchant || t.merchant_name || t.counterparty || null;
+      if (m && !node.merchants.includes(m)) node.merchants.push(m);
+    });
+    inferEdgesFromTxns(accountId, txns);
+    graphLog('🔍', 'Queried ' + accountId,
+      txns.length + ' txns · $' + node.totalAmt.toFixed(0) +
+      (node.merchants.length ? ' · ' + node.merchants.slice(0,2).join(', ') : ''));
+  } else {
+    graphLog('🔍', 'Queried ' + accountId, 'No transactions found');
+  }
+  graphStatus('Queried ' + accountId);
+}
+
+// ── MARK PROFILED ────────────────────────────────────────────────
+function graphMarkProfiled(accountId, profile) {
+  if (!G.nodes[accountId]) return;
+  const node = G.nodes[accountId];
+  node.profiled = true;
+  if (node.state === 'queried' || node.state === 'normal') node.state = 'profiled';
+  const name = profile ? (profile.name || profile.account_holder || '') : '';
+  const risk = profile ? (profile.risk_score || profile.risk_level || '') : '';
+  graphLog('👤', 'Profiled ' + accountId,
+    (name ? name + ' · ' : '') + (risk ? 'Risk: ' + risk : 'profile loaded'));
+  graphStatus('Profile loaded for ' + accountId);
+}
+
+// ── MARK FLAGGED ─────────────────────────────────────────────────
+function graphMarkFlagged(accountId) {
+  if (!G.nodes[accountId]) return;
+  G.nodes[accountId].state = 'flagged';
+  G.edges.forEach(e => {
+    if ((e.from === accountId || e.to === accountId) && e.type === 'scope')
+      e.type = 'confirmed';
+  });
+  graphLog('🚩', 'Flagged ' + accountId, 'Marked suspicious — links confirmed');
+  graphStatus('🚩 ' + accountId + ' flagged');
+}
+
+// ── INFER EDGES ──────────────────────────────────────────────────
+function inferEdgesFromTxns(fromId, txns) {
+  if (!txns || !txns.length) return;
+  let added = 0;
+  txns.forEach(t => {
+    [t.to_account, t.counterparty, t.recipient, t.receiver, t.destination_account]
+      .filter(v => v && v !== fromId && G.nodes[v])
+      .forEach(to => { addEdge(fromId, to, t.amount || 1, 'transaction'); added++; });
+
+    const mid = t.merchant_id || t.merchant;
+    if (mid && typeof mid === 'string' && mid.startsWith('ACC-') && G.nodes[mid] && mid !== fromId) {
+      addEdge(fromId, mid, t.amount || 1, 'merchant'); added++;
+    }
+  });
+  if (fromId !== G.suspect) upgradeEdge(G.suspect, fromId, 'investigated');
+}
+
+function addEdge(from, to, weight, type) {
+  const ex = G.edges.find(e => (e.from===from&&e.to===to)||(e.from===to&&e.to===from));
+  if (ex) { ex.weight = Math.min((ex.weight||1)+0.4, 4); if (type==='transaction') ex.type=type; }
+  else G.edges.push({ from, to, weight: weight||1, type });
+}
+function upgradeEdge(from, to, newType) {
+  const ex = G.edges.find(e => (e.from===from&&e.to===to)||(e.from===to&&e.to===from));
+  if (ex) { if (ex.type==='scope') ex.type=newType; }
+  else G.edges.push({ from, to, weight:1, type:newType });
+}
+
+// ── GRAPH STATUS BAR ─────────────────────────────────────────────
+function graphStatus(msg) {
+  const el = document.getElementById('graph-status');
+  if (el) el.textContent = msg;
+}
+
+// ── STYLES ───────────────────────────────────────────────────────
+function edgeStyle(type) {
+  switch(type) {
+    case 'transaction':  return { color:'rgba(79,158,255,0.9)',  dash:[],    width:2.5, arrow:true };
+    case 'confirmed':    return { color:'rgba(239,68,68,0.85)',  dash:[],    width:2,   arrow:true };
+    case 'investigated': return { color:'rgba(34,197,94,0.7)',   dash:[5,3], width:1.5, arrow:true };
+    case 'merchant':     return { color:'rgba(245,166,35,0.8)',  dash:[3,3], width:1.5, arrow:true };
+    default:             return { color:'rgba(79,158,255,0.11)', dash:[4,6], width:1,   arrow:false };
+  }
+}
+function nodeColor(state) {
+  switch(state) {
+    case 'suspect':  return { fill:'rgba(239,68,68,0.2)',   stroke:'#ef4444', glow:'rgba(239,68,68,0.5)',  r:15 };
+    case 'flagged':  return { fill:'rgba(245,166,35,0.2)',  stroke:'#f5a623', glow:'rgba(245,166,35,0.5)', r:14 };
+    case 'queried':  return { fill:'rgba(34,197,94,0.17)',  stroke:'#22c55e', glow:'rgba(34,197,94,0.4)',  r:13 };
+    case 'profiled': return { fill:'rgba(168,85,247,0.17)', stroke:'#a855f7', glow:'rgba(168,85,247,0.4)', r:13 };
+    default:         return { fill:'rgba(79,158,255,0.09)', stroke:'#4f9eff', glow:'rgba(79,158,255,0.2)', r:11 };
+  }
+}
+
+// ── DRAW ─────────────────────────────────────────────────────────
+function drawOnCanvas(canvas, useFsCoords) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  G._pulse = (G._pulse + 0.032) % (Math.PI * 2);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid dots
+  ctx.fillStyle = 'rgba(79,158,255,0.045)';
+  for (let x = 0; x < W; x += 22) for (let y = 0; y < H; y += 22) {
+    ctx.beginPath(); ctx.arc(x,y,0.8,0,Math.PI*2); ctx.fill();
+  }
+
+  function nx(node) { return useFsCoords ? node.fsx : node.x; }
+  function ny(node) { return useFsCoords ? node.fsy : node.y; }
+
+  // Edges
+  G.edges.forEach(edge => {
+    const a = G.nodes[edge.from], b = G.nodes[edge.to];
+    if (!a || !b) return;
+    const st = edgeStyle(edge.type);
+    const ax = nx(a), ay = ny(a), bx = nx(b), by = ny(b);
+
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+    ctx.strokeStyle = st.color;
+    ctx.lineWidth = Math.min(st.width * (edge.weight||1) * 0.55, 4);
+    ctx.setLineDash(st.dash);
+    if (st.dash.length) ctx.lineDashOffset = -G._pulse * 5;
+    ctx.stroke(); ctx.setLineDash([]);
+
+    if (st.arrow) {
+      const cb = nodeColor(G.nodes[edge.to].state);
+      const ang = Math.atan2(by - ay, bx - ax);
+      const tx = bx - (cb.r + 3) * Math.cos(ang), ty = by - (cb.r + 3) * Math.sin(ang);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx - 8*Math.cos(ang-0.42), ty - 8*Math.sin(ang-0.42));
+      ctx.lineTo(tx - 8*Math.cos(ang+0.42), ty - 8*Math.sin(ang+0.42));
+      ctx.closePath(); ctx.fillStyle = st.color; ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Nodes
+  Object.values(G.nodes).forEach(node => {
+    const c = nodeColor(node.state);
+    const pulse = (node.state==='suspect'||node.state==='flagged') ? Math.sin(G._pulse)*2.5 : 0;
+    const r = c.r + pulse;
+    const nx_ = nx(node), ny_ = ny(node);
+
+    // Glow
+    const grd = ctx.createRadialGradient(nx_,ny_,0, nx_,ny_,r+12);
+    grd.addColorStop(0, c.glow); grd.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(nx_,ny_,r+12,0,Math.PI*2);
+    ctx.fillStyle = grd; ctx.fill();
+
+    // Body
+    ctx.beginPath(); ctx.arc(nx_,ny_,r,0,Math.PI*2);
+    ctx.fillStyle = c.fill; ctx.fill();
+    ctx.strokeStyle = c.stroke; ctx.lineWidth = 1.6; ctx.stroke();
+
+    // Inner label
+    ctx.font = 'bold 8px DM Mono,monospace';
+    ctx.fillStyle = '#e8f0ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(node.id.replace('ACC-','#'), nx_, ny_);
+
+    // State badge
+    const badge = node.state==='suspect'?'⚠':node.state==='flagged'?'🚩':node.state==='queried'?'✓':node.state==='profiled'?'👤':'';
+    if (badge) {
+      ctx.font = '9px sans-serif';
+      ctx.fillText(badge, nx_, ny_ + r + 9);
+    }
+
+    // Account ID below
+    ctx.font = '7px DM Mono,monospace';
+    ctx.fillStyle = c.stroke;
+    ctx.fillText(node.id, nx_, ny_ + r + (badge ? 19 : 9));
+
+    // Txn count badge
+    if (node.totalTxns > 0) {
+      ctx.beginPath(); ctx.arc(nx_ + r - 1, ny_ - r + 1, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#22c55e'; ctx.fill();
+      ctx.font = 'bold 6px DM Mono,monospace'; ctx.fillStyle = '#000';
+      ctx.fillText(node.totalTxns, nx_ + r - 1, ny_ - r + 1);
+    }
+  });
+}
+
+function graphDraw() {
+  const sbCanvas = document.getElementById('graph-canvas');
+  const fsCanvas = G._fsMode ? document.getElementById('graph-canvas-fs') : null;
+
+  drawOnCanvas(sbCanvas, false);
+  if (fsCanvas && fsCanvas.offsetWidth > 0) drawOnCanvas(fsCanvas, true);
+
+  G.animFrame = requestAnimationFrame(graphDraw);
+}
+
+// ── SIDEBAR INTERACTION ──────────────────────────────────────────
+function setupSidebarInteraction() {
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas || canvas._sbInit) return;
+  canvas._sbInit = true;
+  attachInteraction(canvas, false);
+}
+
+function setupFsInteraction() {
+  const canvas = document.getElementById('graph-canvas-fs');
+  if (!canvas || canvas._fsInit) return;
+  canvas._fsInit = true;
+  attachInteraction(canvas, true);
+}
+
+function attachInteraction(canvas, useFsCoords) {
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: cx - rect.left, y: cy - rect.top };
+  }
+  function hitNode(pos) {
+    return Object.values(G.nodes).find(n => {
+      const nx = useFsCoords ? n.fsx : n.x;
+      const ny = useFsCoords ? n.fsy : n.y;
+      const dx = nx - pos.x, dy = ny - pos.y;
+      return Math.sqrt(dx*dx+dy*dy) < 22;
+    });
+  }
+  function setXY(node, x, y) {
+    if (useFsCoords) { node.fsx = x; node.fsy = y; }
+    else { node.x = x; node.y = y; }
+  }
+  function getXY(node) {
+    return useFsCoords ? { x: node.fsx, y: node.fsy } : { x: node.x, y: node.y };
+  }
+
+  let dragging = null, offX = 0, offY = 0, didDrag = false;
+
+  canvas.addEventListener('mousedown', e => {
+    const node = hitNode(getPos(e));
+    if (node) {
+      dragging = node; didDrag = false;
+      const {x,y} = getXY(node);
+      offX = getPos(e).x - x; offY = getPos(e).y - y;
+    }
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (!dragging) {
+      canvas.style.cursor = hitNode(getPos(e)) ? 'pointer' : 'grab';
+      return;
+    }
+    didDrag = true; canvas.style.cursor = 'grabbing';
+    const p = getPos(e);
+    setXY(dragging, p.x - offX, p.y - offY);
+  });
+  canvas.addEventListener('mouseup', e => {
+    if (!didDrag && dragging) {
+      const node = dragging;
+      ['qt-acc','la-acc','fa-acc','sr-suspect'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = node.id;
+      });
+      graphLog('🖱️','Selected', node.id + ' filled into all fields');
+      toast('Selected ' + node.id + ' — filled into all fields', 'good');
+    }
+    dragging = null;
+  });
+  canvas.addEventListener('mouseleave', () => { dragging = null; });
+}
+
+function stopGraph() {
+  cancelAnimationFrame(G.animFrame);
+}
+
 </script>
+<!-- FULLSCREEN GRAPH OVERLAY -->
+<div class="graph-overlay" id="graph-overlay">
+  <div class="graph-overlay-header">
+    <div>
+      <div class="graph-overlay-title">⬡ ACCOUNT RELATIONSHIP GRAPH</div>
+      <div class="graph-overlay-meta" id="graph-overlay-meta">No case active</div>
+    </div>
+    <button class="graph-overlay-close" onclick="closeGraphFullscreen()">✕ Close</button>
+  </div>
+  <div class="graph-overlay-body">
+    <canvas id="graph-canvas-fs"></canvas>
+    <div class="graph-overlay-log">
+      <div class="graph-overlay-log-title">📋 Investigation Log</div>
+      <div id="graph-overlay-log-list"></div>
+    </div>
+  </div>
+  <div class="graph-overlay-legend">
+    <div class="gol-item"><span class="gol-dot" style="background:#ef4444;box-shadow:0 0 6px #ef444466;"></span>Suspect</div>
+    <div class="gol-item"><span class="gol-dot" style="background:#f5a623;box-shadow:0 0 6px #f5a62366;"></span>Flagged</div>
+    <div class="gol-item"><span class="gol-dot" style="background:#22c55e;box-shadow:0 0 6px #22c55e66;"></span>Queried</div>
+    <div class="gol-item"><span class="gol-dot" style="background:#a855f7;box-shadow:0 0 6px #a855f766;"></span>Profiled</div>
+    <div class="gol-item"><span class="gol-dot" style="background:#4f9eff;"></span>Normal</div>
+    <div style="width:1px;background:var(--border);margin:0 4px;"></div>
+    <div class="gol-item"><span class="gol-line" style="background:#4f9eff;"></span>Transaction</div>
+    <div class="gol-item"><span class="gol-line" style="background:#ef4444;"></span>Confirmed</div>
+    <div class="gol-item"><span class="gol-line" style="background:#22c55e;border-top:1px dashed #22c55e;height:0;"></span>Investigated</div>
+    <div class="gol-item"><span class="gol-line" style="background:rgba(79,158,255,0.2);"></span>In scope</div>
+    <div style="margin-left:auto;font-size:10px;color:var(--muted);font-family:'DM Mono';">Drag nodes · Click to fill fields · ESC to close</div>
+  </div>
+</div>
+
 </body>
 </html>
