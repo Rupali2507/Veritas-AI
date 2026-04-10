@@ -7,18 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0a0b0f;
-  --card: #12141a;
-  --card2: #1a1d26;
-  --border: #232736;
-  --gold: #f5c842;
-  --gold2: #e8a800;
+  --bg: #070a12;
+  --card: #0d1120;
+  --card2: #111827;
+  --border: #1e2d4a;
+  --gold: #4f9eff;
+  --gold2: #2979e8;
   --green: #22c55e;
   --red: #ef4444;
-  --blue: #3b82f6;
-  --text: #f0f2ff;
-  --muted: #6b7280;
-  --step-inactive: #1a1d26;
+  --blue: #4f9eff;
+  --text: #e8f0ff;
+  --muted: #5a7aa8;
+  --step-inactive: #111827;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -55,21 +55,21 @@ header {
 
 .logo {
   width:42px; height:42px;
-  background: var(--gold);
+  background: linear-gradient(135deg, #2979e8, #4f9eff);
   border-radius:10px;
   display:flex; align-items:center; justify-content:center;
   font-family:'Bebas Neue';
   font-size:22px;
-  color:#000;
+  color:#fff;
   flex-shrink:0;
-  box-shadow: 0 0 24px rgba(245,200,66,0.35);
+  box-shadow: 0 0 24px rgba(79,158,255,0.4);
 }
 
 .brand-name {
   font-family:'Bebas Neue';
   font-size:26px;
   letter-spacing:2px;
-  color:var(--gold);
+  color:#7bb8ff;
 }
 .brand-sub {
   font-size:11px;
@@ -168,23 +168,23 @@ header {
   text-align:center;
 }
 .diff-pill:hover { border-color:var(--gold); color:var(--gold); }
-.diff-pill.active { background:rgba(245,200,66,0.12); border-color:var(--gold); color:var(--gold); }
+.diff-pill.active { background:rgba(79,158,255,0.12); border-color:var(--gold); color:var(--gold); }
 
 .start-btn {
   width:100%;
   padding:12px;
-  background:var(--gold);
+  background: linear-gradient(135deg, #2979e8, #4f9eff);
   border:none;
   border-radius:10px;
-  color:#000;
+  color:#fff;
   font-family:'Bebas Neue';
   font-size:18px;
   letter-spacing:1px;
   cursor:pointer;
   transition:all 0.2s;
-  box-shadow:0 4px 20px rgba(245,200,66,0.25);
+  box-shadow:0 4px 20px rgba(79,158,255,0.3);
 }
-.start-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(245,200,66,0.4); }
+.start-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(79,158,255,0.5); }
 .start-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 
 /* Alert banner */
@@ -219,8 +219,8 @@ header {
   justify-content:space-between;
 }
 .copy-btn {
-  background:rgba(245,200,66,0.15);
-  border:1px solid rgba(245,200,66,0.3);
+  background:rgba(79,158,255,0.15);
+  border:1px solid rgba(79,158,255,0.3);
   border-radius:5px;
   padding:3px 8px;
   color:var(--gold);
@@ -229,7 +229,7 @@ header {
   font-family:'DM Mono';
   transition:all 0.15s;
 }
-.copy-btn:hover { background:rgba(245,200,66,0.3); }
+.copy-btn:hover { background:rgba(79,158,255,0.3); }
 
 /* Accounts */
 .acc-chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -245,7 +245,7 @@ header {
   transition:all 0.15s;
 }
 .acc-chip:hover { border-color:var(--gold); color:var(--gold); }
-.acc-chip.primary { border-color:var(--gold); color:var(--gold); background:rgba(245,200,66,0.08); }
+.acc-chip.primary { border-color:var(--gold); color:var(--gold); background:rgba(79,158,255,0.08); }
 .acc-chip.flagged { border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.08); }
 
 /* Score panel */
@@ -254,8 +254,8 @@ header {
   font-family:'Bebas Neue';
   font-size:64px;
   line-height:1;
-  color:var(--gold);
-  text-shadow:0 0 30px rgba(245,200,66,0.4);
+  color:#4f9eff;
+  text-shadow:0 0 30px rgba(79,158,255,0.5);
 }
 .score-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:4px; }
 
@@ -269,7 +269,7 @@ header {
 .meter-fill {
   height:100%;
   border-radius:4px;
-  background: linear-gradient(90deg, var(--gold2), var(--gold));
+  background: linear-gradient(90deg, #2979e8, #4f9eff);
   width:0%;
   transition:width 0.8s cubic-bezier(0.4,0,0.2,1);
 }
@@ -286,7 +286,7 @@ header {
   background:var(--border);
   transition:background 0.3s;
 }
-.step-dot.used { background:var(--gold); }
+.step-dot.used { background:#4f9eff; }
 .step-dot.wasted { background:var(--red); }
 
 /* ── MAIN AREA ── */
@@ -326,7 +326,7 @@ header {
   transition:all 0.3s;
   flex-shrink:0;
 }
-.gs-num.active { border-color:var(--gold); color:var(--gold); background:rgba(245,200,66,0.1); box-shadow:0 0 12px rgba(245,200,66,0.2); }
+.gs-num.active { border-color:#4f9eff; color:#4f9eff; background:rgba(79,158,255,0.1); box-shadow:0 0 12px rgba(79,158,255,0.25); }
 .gs-num.done { border-color:var(--green); color:var(--green); background:rgba(34,197,94,0.1); }
 
 .gs-label { font-size:12px; color:var(--muted); white-space:nowrap; transition:color 0.3s; }
@@ -354,8 +354,8 @@ header {
   transition:all 0.3s;
 }
 .action-card.highlighted {
-  border-color:var(--gold);
-  box-shadow:0 0 0 1px rgba(245,200,66,0.15), 0 8px 32px rgba(245,200,66,0.1);
+  border-color:#4f9eff;
+  box-shadow:0 0 0 1px rgba(79,158,255,0.15), 0 8px 32px rgba(79,158,255,0.12);
 }
 
 .ac-header {
@@ -389,7 +389,7 @@ header {
   letter-spacing:0.06em;
   flex-shrink:0;
 }
-.badge-do-first { background:rgba(245,200,66,0.15); color:var(--gold); border:1px solid rgba(245,200,66,0.3); }
+.badge-do-first { background:rgba(79,158,255,0.15); color:#4f9eff; border:1px solid rgba(79,158,255,0.35); }
 .badge-optional { background:rgba(107,114,128,0.15); color:var(--muted); border:1px solid var(--border); }
 .badge-final { background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); }
 .badge-done { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.3); }
@@ -414,7 +414,7 @@ header {
 }
 .field .hint {
   font-size:11px;
-  color:rgba(245,200,66,0.7);
+  color:rgba(79,158,255,0.8);
   margin-top:4px;
 }
 
@@ -445,11 +445,11 @@ header {
   transition:all 0.2s;
 }
 .exec-btn.primary {
-  background:var(--gold);
-  color:#000;
-  box-shadow:0 4px 16px rgba(245,200,66,0.25);
+  background: linear-gradient(135deg, #2979e8, #4f9eff);
+  color:#fff;
+  box-shadow:0 4px 16px rgba(79,158,255,0.3);
 }
-.exec-btn.primary:hover { box-shadow:0 6px 24px rgba(245,200,66,0.4); transform:translateY(-1px); }
+.exec-btn.primary:hover { box-shadow:0 6px 24px rgba(79,158,255,0.5); transform:translateY(-1px); }
 .exec-btn.danger {
   background:rgba(239,68,68,0.12);
   color:#ef4444;
@@ -471,15 +471,25 @@ header {
   line-height: 1.6;
   color: #94a3b8;
 
-  height: 200px;
-  max-height: 200px;
-
-  overflow-y: scroll !important;
-  overflow-x: auto;
+  height: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
 
   white-space: pre;
 
   display: block;
+  transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1),
+              height 0.4s cubic-bezier(0.4,0,0.2,1),
+              padding 0.3s ease;
+}
+.result-box.show {
+  height: auto;
+  max-height: 9999px;
+  padding: 14px;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 .result-box.show { display:block; }
 .result-box.success { border-color:rgba(34,197,94,0.3); color:#86efac; }
@@ -487,18 +497,18 @@ header {
 
 /* ── WHAT HAPPENED explainer ── */
 .explainer {
-  background:rgba(245,200,66,0.05);
-  border:1px solid rgba(245,200,66,0.15);
+  background:rgba(79,158,255,0.05);
+  border:1px solid rgba(79,158,255,0.18);
   border-radius:10px;
   padding:14px 16px;
   margin-top:10px;
   display:none;
   font-size:12px;
   line-height:1.6;
-  color:#d4b84a;
+  color:#7bafd4;
 }
 .explainer.show { display:block; }
-.explainer strong { color:var(--gold); }
+.explainer strong { color:#4f9eff; }
 
 /* ── WIN SCREEN ── */
 .win-screen {
@@ -519,31 +529,31 @@ header {
 
 .win-card {
   background:var(--card);
-  border:2px solid var(--gold);
+  border:2px solid #4f9eff;
   border-radius:20px;
   padding:48px 56px;
   max-width:480px;
-  box-shadow:0 0 80px rgba(245,200,66,0.25);
+  box-shadow:0 0 80px rgba(79,158,255,0.3);
 }
 .win-trophy { font-size:72px; margin-bottom:8px; animation:bounce 1s ease infinite alternate; }
 @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
-.win-title { font-family:'Bebas Neue'; font-size:52px; color:var(--gold); letter-spacing:2px; }
+.win-title { font-family:'Bebas Neue'; font-size:52px; color:#4f9eff; letter-spacing:2px; }
 .win-score { font-family:'Bebas Neue'; font-size:36px; color:var(--green); }
 .win-msg { font-size:14px; color:var(--muted); margin-top:8px; line-height:1.6; }
 .win-again {
   margin-top:20px;
   padding:12px 32px;
-  background:var(--gold);
+  background: linear-gradient(135deg, #2979e8, #4f9eff);
   border:none;
   border-radius:10px;
-  color:#000;
+  color:#fff;
   font-family:'Bebas Neue';
   font-size:20px;
   letter-spacing:1px;
   cursor:pointer;
   transition:all 0.2s;
 }
-.win-again:hover { transform:scale(1.04); box-shadow:0 0 24px rgba(245,200,66,0.5); }
+.win-again:hover { transform:scale(1.04); box-shadow:0 0 24px rgba(79,158,255,0.6); }
 
 /* ── TOAST ── */
 .toast {
@@ -611,7 +621,7 @@ header {
     <!-- Setup -->
     <div class="sidebar-section">
       <div class="section-label">① Server & Difficulty</div>
-      <input class="url-input" id="server-url" value="http://localhost:7860" placeholder="Server URL">
+      <input class="url-input" id="server-url" value="https://ratnesh18-veritas-ai.hf.space" placeholder="Server URL">
       <div class="diff-pills">
         <button class="diff-pill active" onclick="pickDiff('task_easy',this)">Easy</button>
         <button class="diff-pill" onclick="pickDiff('task_medium',this)">Medium</button>
@@ -689,9 +699,9 @@ header {
     <div class="action-area">
 
       <!-- ── STEP 1: Query Transactions ── -->
-      <div class="action-card" id="card-query" style="border-color:rgba(245,200,66,0.4);">
+      <div class="action-card" id="card-query" style="border-color:rgba(79,158,255,0.4);">
         <div class="ac-header" onclick="toggleCard('query')">
-          <div class="ac-icon" style="background:rgba(245,200,66,0.1);">🔍</div>
+          <div class="ac-icon" style="background:rgba(79,158,255,0.1);">🔍</div>
           <div>
             <div class="ac-title">Step 1 — Query Transactions</div>
             <div class="ac-desc">Pull the transaction history for the suspect account</div>
@@ -762,7 +772,7 @@ header {
       <!-- ── STEP 3: Flag Account ── -->
       <div class="action-card" id="card-flag">
         <div class="ac-header" onclick="toggleCard('flag')">
-          <div class="ac-icon" style="background:rgba(245,200,66,0.08);">🚩</div>
+          <div class="ac-icon" style="background:rgba(79,158,255,0.08);">🚩</div>
           <div>
             <div class="ac-title">Step 3 — Flag the Suspect</div>
             <div class="ac-desc">Mark the account as suspicious before submitting</div>
@@ -889,9 +899,37 @@ function copySuspect() {
 }
 
 // ── TOGGLE CARD ─────────────────────────────────────────────────
+const CARD_ORDER = ['query', 'lookup', 'flag', 'report'];
+
+function openCard(name) {
+  // Close all others, open this one
+  CARD_ORDER.forEach(n => {
+    const body = document.getElementById('body-' + n);
+    if (n === name) {
+      body.classList.add('open');
+    } else {
+      body.classList.remove('open');
+    }
+  });
+}
+
 function toggleCard(name) {
   const body = document.getElementById('body-' + name);
-  body.classList.toggle('open');
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+  } else {
+    openCard(name);
+  }
+}
+
+// Advance accordion: close current step, open next step
+function advanceToNextStep(currentName) {
+  const idx = CARD_ORDER.indexOf(currentName);
+  const nextName = CARD_ORDER[idx + 1];
+  if (nextName) {
+    // Slight delay so user sees the success result before it slides shut
+    setTimeout(() => openCard(nextName), 600);
+  }
 }
 
 // ── STEP GUIDE ──────────────────────────────────────────────────
@@ -1008,7 +1046,7 @@ async function startCase() {
 
     // Highlight step 1
     document.getElementById('card-query').classList.add('highlighted');
-    document.getElementById('body-query').classList.add('open');
+    openCard('query');
 
     // Reset result boxes
     ['query','lookup','flag','report'].forEach(n => {
@@ -1102,7 +1140,7 @@ async function doQuery() {
         document.getElementById('badge-query').textContent = '✓ DONE';
         setGuideStep(2);
         document.getElementById('card-lookup').classList.add('highlighted');
-        document.getElementById('body-lookup').classList.add('open');
+        advanceToNextStep('query');
       } else {
         toast('0 transactions found. Check account ID or remove filters.', 'bad');
       }
@@ -1140,7 +1178,7 @@ async function doLookup() {
       document.getElementById('badge-lookup').textContent = '✓ DONE';
       setGuideStep(3);
       document.getElementById('card-flag').classList.add('highlighted');
-      document.getElementById('body-flag').classList.add('open');
+      advanceToNextStep('lookup');
       toast('✓ Profile loaded! Proceed to Step 3 — Flag.', 'good');
     }
   } catch(e) {
@@ -1184,7 +1222,7 @@ async function doFlag() {
       document.getElementById('badge-flag').textContent = '✓ DONE';
       setGuideStep(4);
       document.getElementById('card-report').classList.add('highlighted');
-      document.getElementById('body-report').classList.add('open');
+      advanceToNextStep('flag');
       document.getElementById('flagged-display').textContent = S.flagged.join(', ');
       toast('✓ Flagged! Now submit your report.', 'good');
     }
