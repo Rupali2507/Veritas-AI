@@ -841,6 +841,7 @@ header {
             <button class="exec-btn" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);" onclick="autoFillEvidence()">✨ Auto-fill Evidence</button>
           </div>
           <div class="result-box" id="res-report"></div>
+          <div class="explainer" id="exp-report"></div>
         </div>
       </div>
 
@@ -1048,11 +1049,16 @@ async function startCase() {
     document.getElementById('card-query').classList.add('highlighted');
     openCard('query');
 
-    // Reset result boxes
+    // Reset result boxes and highlighted cards (null-safe)
     ['query','lookup','flag','report'].forEach(n => {
-      document.getElementById('res-' + n).className = 'result-box';
-      document.getElementById('exp-' + n).className = 'explainer';
-      document.getElementById('badge-' + n).className = 'ac-badge badge-optional';
+      const res = document.getElementById('res-' + n);
+      const exp = document.getElementById('exp-' + n);
+      const badge = document.getElementById('badge-' + n);
+      const card = document.getElementById('card-' + n);
+      if (res) res.className = 'result-box';
+      if (exp) exp.className = 'explainer';
+      if (badge) badge.className = 'ac-badge badge-optional';
+      if (card) card.classList.remove('highlighted');
     });
     document.getElementById('badge-query').className = 'ac-badge badge-do-first';
     document.getElementById('badge-query').textContent = 'DO THIS FIRST';
