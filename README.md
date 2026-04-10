@@ -42,7 +42,7 @@ a toy environment — it mirrors production analyst tooling.
 
 | Resource | URL |
 |---|---|
-| HF Space | https://huggingface.co/spaces/ratnesh18/veritas-ai |
+| HF Space | https://huggingface.co/spaces/ratneshhf/veritas-ai |
 | Interactive API docs | https://ratnesh18-veritas-ai.hf.space/docs |
 | Health check | https://ratnesh18-veritas-ai.hf.space/health |
 | Schema | https://ratnesh18-veritas-ai.hf.space/schema |
