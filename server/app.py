@@ -195,6 +195,14 @@ async def step(request: Request):
     }
 
 
+@app.get("/schema")
+def schema():
+    return {
+        "action": VeritasAction.model_json_schema(),
+        "observation": VeritasObservation.model_json_schema(),
+    }
+
+
 @app.get("/state")
 def state():
     global _env
